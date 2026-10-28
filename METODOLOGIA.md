@@ -1,4 +1,4 @@
-# ALERE ALUMNAE | Fuentes y metodología (corte 2026-10-28)
+# ALLERE ALUMNAE | Fuentes y metodología (corte 2026-10-28)
 
 ## Origen y definición
 1. `data/escuelas.json`: 1,501 CCT devueltas por el filtro **Sonora** y **ciclo 2025–2026** del tablero IMSS `Peso y talla (IMC) Escuela` el 28/10/2026. Cruce con catálogos SEP 2024–2026.
