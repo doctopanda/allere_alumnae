@@ -4,11 +4,134 @@ const fmt=x=>new Intl.NumberFormat('es-MX').format(x);
 const cssFor={COMPLETADA:'pin-completed',FALLIDA:'pin-failed',PENDIENTE:'pin-pending',SIN_ESTADO_LOCAL:'pin-historic'};
 const statusText={COMPLETADA:'Completada en checkpoint',FALLIDA:'Fallida: requiere reintento',PENDIENTE:'Pendiente de consulta',SIN_ESTADO_LOCAL:'Sin estado local'};
 let records=[],filtered=[],map,markers,health,markerByCct=new Map(),debounce;
+let municipalLayer=null;
+const MUNICIPIO_CODE_NAMES=["Aconchi","Agua Prieta","Álamos","Altar","Arivechi","Arizpe","Átil","Bacadéhuachi","Bacanora","Bacerac","Bacoachi","Bácum","Banámichi","Baviácora","Bavispe","Benjamín Hill","Caborca","Cajeme","Cananea","Carbó","La Colorada","Cucurpe","Cumpas","Divisaderos","Empalme","Etchojoa","Fronteras","Granados","Guaymas","Hermosillo","Huachinera","Huásabas","Huatabampo","Huépac","Ímuris","Magdalena","Mazatán","Moctezuma","Naco","Nácori Chico","Nacozari de García","Navojoa","Nogales","Ónavas","Opodepe","Oquitoa","Pitiquito","Puerto Peñasco","Quiriego","Rayón","Rosario","Sahuaripa","San Felipe de Jesús","San Javier","San Luis Río Colorado","San Miguel de Horcasitas","San Pedro de la Cueva","Santa Ana","Santa Cruz","Sáric","Soyopa","Suaqui Grande","Tepache","Trincheras","Tubutama","Ures","Villa Hidalgo","Villa Pesqueira","Yécora","General Plutarco Elías Calles","Benito Juárez","San Ignacio Río Muerto"];
+const MUNICIPAL_URLS=['./data/municipios_sonora.geojson','https://raw.githubusercontent.com/MacWilliXD/INEGI-geojson/main/geojson_descargas/AGEM_26.geojson'];
+
 function escapeHtml(x){return String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function safeFile(x){return String(x??'').replace(/["\n\r]/g,'');}
 function school(r){return {cct:r[0],nombre:r[1],municipio:r[2],localidad:r[3],lat:r[4],lon:r[5],estado:r[6]};}
 function getStatus(s){return statusText[s]||'No informado';}
 function statusClass(s){return cssFor[s]||cssFor.SIN_ESTADO_LOCAL;}
+
+function normalizeMunicipio(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/gi,'').toUpperCase();}
+function municipalityName(feature){
+  const p=feature.properties||{};
+  for(const k of ['nombre','NOMGEO','NOM_MUN','NOM_MPIO','NOM_MUNICIPIO','nomgeo','nom_mun','municipio','NOMBRE','name','NAME']){
+    if(p[k]&&String(p[k]).trim())return String(p[k]).trim();
+  }
+  for(const k of ['CVE_MUN','CVEGEO','CVE_MPIO','cve_mun','id']){
+    const code=String(p[k]||'').slice(-3);
+    const i=Number(code);
+    if(Number.isInteger(i)&&i>=1&&i<=72)return MUNICIPIO_CODE_NAMES[i-1];
+  }
+  return '';
+}
+function municipalityStats(){
+  const stats=new Map();
+  for(const s of records){
+    const k=normalizeMunicipio(s.municipio);
+    if(!stats.has(k))stats.set(k,{cct:0,done:0});
+    const st=stats.get(k);st.cct++;
+    if(s.estado==='COMPLETADA')st.done++;
+  }
+  return stats;
+}
+function polygonStyle(feature){
+  const name=municipalityName(feature);
+  const stats=municipalityStats().get(normalizeMunicipio(name))||{cct:0,done:0};
+  const metric=el('polyMetric').value;
+  const score=metric==='avance'?(stats.cct?stats.done*100/stats.cct:-1):stats.cct;
+  let color='#dfe5e0';
+  if(metric==='avance'){
+    if(score>=95)color='#20735c';
+    else if(score>=85)color='#56a88c';
+    else if(score>=65)color='#a4c7a5';
+    else if(score>=0)color='#dec28b';
+  }else{
+    if(score>=100)color='#175f4f';
+    else if(score>=50)color='#348777';
+    else if(score>=20)color='#65aa94';
+    else if(score>=5)color='#a0cab3';
+    else if(score>0)color='#cfdfd2';
+  }
+  return {color:'#376759',weight:.9,opacity:.75,fillColor:color,fillOpacity:.35};
+}
+function setPolygonStatus(msg,status=''){
+  const node=el('polygonStatus');node.textContent=msg;node.className='polygon-status '+status;
+}
+async function loadPolygons(){
+  if(!map)return;
+  let geojson=null,origin='';
+  for(const url of MUNICIPAL_URLS){
+    try{
+      const response=await fetch(url,{cache:'no-cache'});
+      if(!response.ok)continue;
+      const j=await response.json();
+      if(j.type!=='FeatureCollection'||!Array.isArray(j.features)||j.features.length!==72)throw Error('Se esperaban exactamente 72 polígonos municipales.');
+      geojson=j;origin=url;break;
+    }catch(e){console.warn('Fuente municipal no disponible:',url,String(e));}
+  }
+  if(!geojson){
+    setPolygonStatus('No fue posible cargar los polígonos. El mapa escolar sigue operativo.','error');
+    el('showPolygons').checked=false;
+    return;
+  }
+  const counts=municipalityStats();
+  let named=0;
+  const layer=L.geoJSON(geojson,{
+    style:polygonStyle,
+    onEachFeature:(f,l)=>{
+      const name=municipalityName(f);
+      if(name)named++;
+      const stat=counts.get(normalizeMunicipio(name))||{cct:0,done:0};
+      const pct=stat.cct?(100*stat.done/stat.cct).toFixed(1)+'%':'Sin CCT observadas';
+      const msg='<b>'+escapeHtml(name||'Municipio sin nombre')+'</b><br>'+fmt(stat.cct)+' CCT del filtro Tableau<br>'+fmt(stat.done)+' completadas ('+pct+')<br><small>No es prevalencia de obesidad</small>';
+      l.bindTooltip(msg,{sticky:true});
+      l.on('mouseover',()=>l.setStyle({weight:2.3,fillOpacity:.55}));
+      l.on('mouseout',()=>l.setStyle(polygonStyle(f)));
+      l.on('click',()=>{
+        const selected=[...el('municipio').options].find(o=>normalizeMunicipio(o.value)===normalizeMunicipio(name));
+        if(selected){el('municipio').value=selected.value;applyFilters(true)}
+        else setPolygonStatus('Nombre de municipio por revisar: '+name,'error');
+      });
+    }
+  });
+  if(named!==72){
+    setPolygonStatus('La fuente contiene 72 polígonos, pero sólo '+named+' tienen municipio identificable. Revisar correspondencias.','error');
+    return;
+  }
+  municipalLayer=layer;
+  const select=el('municipio'), values=new Set([...select.options].map(o=>normalizeMunicipio(o.value)));
+  const append=[];
+  layer.eachLayer(l=>{
+    const n=municipalityName(l.feature);
+    if(n&&!values.has(normalizeMunicipio(n))){
+      const opt=document.createElement('option');opt.value=n;opt.textContent=n;append.push(opt);
+      values.add(normalizeMunicipio(n));
+    }
+  });
+  for(const opt of append)select.append(opt);
+  const options=[...select.options].slice(1).sort((a,b)=>a.textContent.localeCompare(b.textContent,'es'));
+  for(const opt of options)select.append(opt);
+  if(el('showPolygons').checked)municipalLayer.addTo(map);
+  el('municipalLegend').hidden=!el('showPolygons').checked;
+  setPolygonStatus('72 municipios cargados · '+(origin.startsWith('./')?'capa local':'fuente externa')+' · clic para filtrar','ok');
+  map.attributionControl.addAttribution('<a href="https://github.com/MacWilliXD/INEGI-geojson" target="_blank" rel="noopener">Geometrías municipales (compilación INEGI-geojson)</a>');
+}
+function togglePolygons(){
+  if(!map||!municipalLayer)return;
+  const enabled=el('showPolygons').checked;
+  if(enabled&&!map.hasLayer(municipalLayer))municipalLayer.addTo(map);
+  if(!enabled&&map.hasLayer(municipalLayer))map.removeLayer(municipalLayer);
+  el('municipalLegend').hidden=!enabled;
+}
+function refreshPolygonMetric(){
+  if(!municipalLayer)return;
+  municipalLayer.eachLayer(l=>l.setStyle(polygonStyle(l.feature)));
+  el('legendMetric').textContent=el('polyMetric').value==='avance'?'más intenso = mayor % de consultas completadas':'más intenso = mayor número de CCT';
+}
+
 function popupText(s){
   return '<div class="popup"><h3>'+escapeHtml(s.nombre||'Escuela sin denominación')+'</h3>'+
     '<p><b>CCT:</b> '+escapeHtml(s.cct)+'</p><p><b>Municipio:</b> '+escapeHtml(s.municipio)+'</p>'+
@@ -133,6 +256,10 @@ async function main(){
     if(records.length!==1501)throw Error('Cantidad de CCT distinta a la esperada: '+records.length);
     filtered=records;
     updateKpis();fillMunicipalities();initMap();applyFilters(false);populateHealth();
+    loadPolygons();
+    el('showPolygons').addEventListener('change',togglePolygons);
+    el('polyMetric').addEventListener('change',refreshPolygonMetric);
+
     el('search').addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(()=>applyFilters(true),230)});
     el('municipio').addEventListener('change',()=>applyFilters(true));
     el('estado').addEventListener('change',()=>applyFilters(true));
