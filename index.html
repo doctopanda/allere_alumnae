@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#123e36">
+  <meta name="description" content="ALERE ALUMNAE: mapa exploratorio de cobertura escolar en Sonora basado en catálogos SEP, filtros IMSS y extracción local.">
+  <title>ALERE ALUMNAE | Observatorio Escolar de Sonora</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar" aria-label="Panel de control">
+      <header class="brand">
+        <div class="brand-logo" aria-hidden="true">✦</div>
+        <div><p class="eyebrow">SALUD ESCOLAR · SONORA</p><h1>ALERE <em>ALUMNAE</em></h1><p class="tagline">Observatorio territorial · 2025–2026</p></div>
+      </header>
+      <div class="content">
+        <section class="intro">
+          <div class="section-title"><span class="overline">CORTE DE INVENTARIO</span><span class="live-dot"></span></div>
+          <h2>Lo que sabemos.<br><em>Lo que falta.</em></h2>
+          <p>Mapa de escuelas identificadas en el filtro IMSS Sonora, contrastadas con el catálogo SEP. El avance de captura no equivale a evaluaciones verificadas.</p>
+        </section>
+        <section class="kpis" aria-label="Indicadores de cobertura">
+          <div class="kpi kpi-main"><span>CCT observadas en Tableau</span><strong id="kTotal">1,501</strong><small>Ciclo reportado 2025–2026</small></div>
+          <div class="kpi"><span>Completadas en checkpoint</span><strong id="kComplete">1,393</strong><small>Último estado local</small></div>
+          <div class="kpi"><span>Fallidas</span><strong id="kFailed">17</strong><small>Para reintento</small></div>
+          <div class="kpi"><span>Pendientes / históricas</span><strong id="kPending">91</strong><small>87 + 4 sin estado</small></div>
+        </section>
+        <section class="progress">
+          <div class="between"><h3>Progreso de consulta</h3><strong id="kPercent">92.8%</strong></div>
+          <div class="bar"><i id="barDone"></i><i id="barFailed"></i><i id="barPending"></i></div>
+          <p>Corresponde al checkpoint; no representa la proporción de escolares evaluados.</p>
+        </section>
+        <div class="divider"></div>
+        <section class="filters">
+          <div class="between"><h3>Explorar el territorio</h3><button type="button" id="reset" class="text-button">Limpiar filtros</button></div>
+          <label for="search">Buscar por CCT, escuela o localidad</label>
+          <div class="searchwrap"><span aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" placeholder="Ej. 26DPR · Hermosillo"></div>
+          <label for="municipio">Municipio</label>
+          <select id="municipio"><option value="">Todos los municipios</option></select>
+          <label for="estado">Estado de consulta</label>
+          <select id="estado"><option value="">Todos los estados</option><option value="COMPLETADA">Completada en checkpoint</option><option value="PENDIENTE">Pendiente</option><option value="FALLIDA">Fallida</option><option value="SIN_ESTADO_LOCAL">Sin estado en checkpoint</option></select>
+          <div class="between results"><span id="resultCount">Cargando escuelas…</span><button id="download" class="text-button">Exportar listado</button></div>
+          <div id="schoolList" class="school-list" aria-live="polite"></div>
+        </section>
+        <section class="source-warning"><strong>Privacidad y alcance</strong><p>Sólo se publican datos de escuelas y agregados autorizables. No hay nombres, domicilios ni registros clínicos individuales de menores. La ubicación es referencial, tomada de SEP.</p></section>
+      </div>
+    </aside>
+    <main class="main">
+      <div class="topbar">
+        <div class="topbar-titles"><span class="crumb">ALERE ALUMNAE / CARTOGRAFÍA</span><h2>Sonora, bajo la lupa.</h2></div>
+        <div class="tabs" role="group" aria-label="Vista"><button id="tabMap" class="tab active" aria-pressed="true">Mapa escolar</button><button id="tabHealth" class="tab" aria-pressed="false">Panorama IMC parcial</button></div>
+      </div>
+      <section id="mapView" class="map-panel">
+        <div id="map" aria-label="Mapa interactivo de escuelas de Sonora"></div>
+        <div class="map-legend"><strong>Estado de extracción</strong><span><i class="dot green"></i>Completada</span><span><i class="dot orange"></i>Fallida</span><span><i class="dot slate"></i>Pendiente</span><span><i class="dot gray"></i>Sin estado</span></div>
+        <div class="map-footnote">Basemap © OpenStreetMap · Puntos SEP referenciales · Datos IMSS filtrados para Sonora</div>
+      </section>
+      <section id="healthView" class="health-panel" hidden>
+        <div class="health-head"><span class="overline">RESPALDO HISTÓRICO / CORTE PARCIAL</span><h3>Peso y talla: información recuperada</h3><p>Estas cifras proceden de 194 CCT descargadas previamente, NO de las 1,393 completadas en el último checkpoint. El archivo no permite confirmar el ciclo de cada CCT individualmente; por ello no deben usarse como estimación estatal.</p></div>
+        <div class="health-kpis">
+          <div><small>CCT con tablas de resultados</small><strong id="hSchools">194</strong></div>
+          <div><small>Menores evaluados según hojas</small><strong id="hEvaluated">20,787</strong></div>
+          <div><small>Clasificaciones IMC recuperadas</small><strong id="hClassified">20,188</strong></div>
+        </div>
+        <div class="health-chart" id="healthChart"></div>
+        <div class="health-municipios">
+          <div class="between"><div><h3>Agregación municipal disponible</h3><p>Sólo municipios con cinco o más CCT y al menos cincuenta evaluados en el respaldo.</p></div></div>
+          <div id="municipalityHealth" class="health-grid"></div>
+        </div>
+        <div class="warning-block"><strong>Interpretación obligatoria</strong><p>Se muestran conteos de un subconjunto no aleatorio. No se calculan tasas estatales ni comparaciones de desempeño entre escuelas. Se suprimen subgrupos municipales menores de once.</p></div>
+      </section>
+      <footer class="footer"><span>ALERE ALUMNAE · Observatorio escolar</span><span>Fuente: filtros IMSS + SEP · Corte local 28 OCT 2026 · Publicación exploratoria</span></footer>
+    </main>
+  </div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="./app.js"></script>
+</body>
+</html>
