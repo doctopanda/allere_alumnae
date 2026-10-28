@@ -44,6 +44,16 @@
           <select id="municipio"><option value="">Todos los municipios</option></select>
           <label for="estado">Estado de consulta</label>
           <select id="estado"><option value="">Todos los estados</option><option value="COMPLETADA">Completada en checkpoint</option><option value="PENDIENTE">Pendiente</option><option value="FALLIDA">Fallida</option><option value="SIN_ESTADO_LOCAL">Sin estado en checkpoint</option></select>
+          <div class="territory-controls">
+            <label class="checkbox-line"><input id="showPolygons" type="checkbox" checked> Mostrar polígonos municipales</label>
+            <label for="polyMetric">Colorear municipios por</label>
+            <select id="polyMetric">
+              <option value="cuenta">CCT observadas en Tableau</option>
+              <option value="avance">Porcentaje de consultas completadas</option>
+            </select>
+            <p id="polygonStatus" class="polygon-status">Cargando límites municipales…</p>
+            <p class="polygon-help">Haz clic en un municipio para filtrar sus escuelas. Los colores reflejan <strong>cobertura de extracción</strong>, nunca prevalencia de obesidad.</p>
+          </div>
           <div class="between results"><span id="resultCount">Cargando escuelas…</span><button id="download" class="text-button">Exportar listado</button></div>
           <div id="schoolList" class="school-list" aria-live="polite"></div>
         </section>
@@ -57,8 +67,9 @@
       </div>
       <section id="mapView" class="map-panel">
         <div id="map" aria-label="Mapa interactivo de escuelas de Sonora"></div>
+        <div class="municipal-legend" id="municipalLegend" hidden>Municipios · CCT observadas: <span id="legendMetric">más intenso = más escuelas</span></div>
         <div class="map-legend"><strong>Estado de extracción</strong><span><i class="dot green"></i>Completada</span><span><i class="dot orange"></i>Fallida</span><span><i class="dot slate"></i>Pendiente</span><span><i class="dot gray"></i>Sin estado</span></div>
-        <div class="map-footnote">Basemap © OpenStreetMap · Puntos SEP referenciales · Datos IMSS filtrados para Sonora</div>
+        <div class="map-footnote">Basemap © OpenStreetMap · Límites municipales: fuente cartográfica identificada en metodología · Puntos SEP referenciales</div>
       </section>
       <section id="healthView" class="health-panel" hidden>
         <div class="health-head"><span class="overline">RESPALDO HISTÓRICO / CORTE PARCIAL</span><h3>Peso y talla: información recuperada</h3><p>Estas cifras proceden de 194 CCT descargadas previamente, NO de las 1,393 completadas en el último checkpoint. El archivo no permite confirmar el ciclo de cada CCT individualmente; por ello no deben usarse como estimación estatal.</p></div>
