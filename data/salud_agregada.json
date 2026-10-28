@@ -1,0 +1,87 @@
+{
+  "corte_archivo": "2026-10-24",
+  "escuelas_con_datos": 194,
+  "evaluados_registrados": 20787,
+  "clasificados_imc": 20188,
+  "imc_estado_muestra": {
+    "Normal": 10984,
+    "Obesidad": 4651,
+    "Peso Bajo": 572,
+    "Sobrepeso": 3981
+  },
+  "municipios_publicables": [
+    {
+      "municipio": "Agua Prieta",
+      "escuelas": 12,
+      "evaluados": 2487,
+      "Peso Bajo": 84,
+      "Normal": 1265,
+      "Sobrepeso": 434,
+      "Obesidad": 542
+    },
+    {
+      "municipio": "Caborca",
+      "escuelas": 22,
+      "evaluados": 1249,
+      "Peso Bajo": 27,
+      "Normal": 604,
+      "Sobrepeso": 263,
+      "Obesidad": 272
+    },
+    {
+      "municipio": "Cajeme",
+      "escuelas": 60,
+      "evaluados": 7764,
+      "Peso Bajo": 171,
+      "Normal": 4082,
+      "Sobrepeso": 1517,
+      "Obesidad": 1850
+    },
+    {
+      "municipio": "Cananea",
+      "escuelas": 8,
+      "evaluados": 1426,
+      "Peso Bajo": 48,
+      "Normal": 757,
+      "Sobrepeso": 297,
+      "Obesidad": 305
+    },
+    {
+      "municipio": "Empalme",
+      "escuelas": 11,
+      "evaluados": 1228,
+      "Peso Bajo": 54,
+      "Normal": 655,
+      "Sobrepeso": 249,
+      "Obesidad": 229
+    },
+    {
+      "municipio": "Etchojoa",
+      "escuelas": 10,
+      "evaluados": 487,
+      "Peso Bajo": null,
+      "Normal": 289,
+      "Sobrepeso": 95,
+      "Obesidad": 88
+    },
+    {
+      "municipio": "Guaymas",
+      "escuelas": 37,
+      "evaluados": 2946,
+      "Peso Bajo": 112,
+      "Normal": 1592,
+      "Sobrepeso": 528,
+      "Obesidad": 668
+    },
+    {
+      "municipio": "Hermosillo",
+      "escuelas": 7,
+      "evaluados": 1185,
+      "Peso Bajo": 21,
+      "Normal": 746,
+      "Sobrepeso": 215,
+      "Obesidad": 188
+    }
+  ],
+  "nota": "Corte parcial de 194 CCT descargadas el 24/10/2026. No es estimación estatal ni mide prevalencia estatal. El ciclo no figura por CCT en el archivo del respaldo; no se dispone de las tablas de las 1393 CCT completadas en el corte posterior. Por confidencialidad sólo se muestran municipios con >=5 CCT y >=50 evaluados; subgrupos <11 se suprimen."
+}
