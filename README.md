@@ -1,4 +1,4 @@
-# ALERE ALUMNAE | Sonora
+# ALLERE ALUMNAE | Sonora
 
 Visor geográfico de cobertura del programa de Salud Escolar en Sonora, México. Muestra únicamente metadatos institucionales de CCT y estadísticas generales; **no publica microdatos ni identificadores de menores**.
 
