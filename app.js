@@ -197,6 +197,16 @@ function refreshPolygonMetric(){
 // Punto escolar SEP => AGEB de ubicación del plantel; nunca inferir residencia de alumnos.
 function codeMunicipio(name){
   if(!name)return null;
+  if(municipalLayer){
+    let fromGeometry=null;
+    municipalLayer.eachLayer(layer=>{
+      if(fromGeometry||normalizeMunicipio(municipalityName(layer.feature))!==normalizeMunicipio(name))return;
+      const p=layer.feature.properties||{};
+      const code=String(p.cve_mun||p.cve_agem||p.cvegeo||'').slice(-3);
+      if(/^\d{3}$/.test(code))fromGeometry=code;
+    });
+    if(fromGeometry)return fromGeometry;
+  }
   const id=MUNICIPIO_CODE_NAMES.findIndex(x=>normalizeMunicipio(x)===normalizeMunicipio(name));
   return id>=0?String(id+1).padStart(3,'0'):null;
 }
