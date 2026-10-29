@@ -276,20 +276,33 @@ async function loadAgebs(){
   status.className='polygon-status';
   status.textContent='Consultando AGEB urbanas de '+name+' (INEGI 26'+code+')…';
   const local='./data/ageb/26'+code+'.geojson';
-  const inegi='https://gaia.inegi.org.mx/wscatgeo/v2/geo/agebu/26/'+code;
-  let featureCollection=null,which='';
-  for(const url of [local,inegi]){
-    try{
-      const resp=await fetch(url,{cache:'force-cache'});
-      if(!resp.ok)continue;
-      const candidate=readAgebs(await resp.json());
-      if(!candidate||candidate.features.length===0)continue;
-      featureCollection=candidate;which=url===local?'copia local':'servicio INEGI';break;
-    }catch(e){console.warn('AGEB no disponible:',url,String(e));}
+  let featureCollection=null,which='',partialSource=false;
+  try{
+    const localResp=await fetch(local,{cache:'force-cache'});
+    if(localResp.ok){
+      const candidate=readAgebs(await localResp.json());
+      if(candidate?.features?.length){featureCollection=candidate;which='archivo local';}
+    }
+  }catch(e){console.warn('AGEB local no disponible:',String(e));}
+  if(!featureCollection){
+    const endpoints=[
+      ['urbana','https://gaia.inegi.org.mx/wscatgeo/v2/geo/agebu/26/'+code],
+      ['rural','https://gaia.inegi.org.mx/wscatgeo/v2/geo/agebr/26/'+code]
+    ];
+    const results=await Promise.all(endpoints.map(async([tipo,url])=>{
+      try{
+        const res=await fetch(url,{cache:'force-cache'});
+        if(!res.ok)return {tipo,features:[],ok:false};
+        const j=readAgebs(await res.json());
+        return {tipo,features:(j?.features||[]).map(f=>({...f,properties:{...(f.properties||{}),tipo_ageb:tipo}})),ok:true};
+      }catch(e){console.warn('AGEB '+tipo+' no disponible:',String(e));return {tipo,features:[],ok:false};}
+    }));
+    const features=results.flatMap(r=>r.features);
+    if(features.length){featureCollection={type:'FeatureCollection',features};which='servicio INEGI';partialSource=results.some(r=>!r.ok);}
   }
   if(requestId!==agebLoadToken)return;
   if(!featureCollection){
-    status.textContent='AGEB no disponibles en esta sesión. Si INEGI bloquea la consulta, hay que generar los GeoJSON locales. Los polígonos municipales siguen visibles.';
+    status.textContent='AGEB urbanas/rurales no disponibles en esta sesión. Se requiere descargar el GeoJSON oficial y guardarlo localmente. Los polígonos municipales siguen visibles.';
     status.className='polygon-status error';return;
   }
   const prefix='26'+code;
@@ -306,12 +319,13 @@ async function loadAgebs(){
   const municipalSchools=records.filter(s=>normalizeMunicipio(s.municipio)===normalizeMunicipio(name)&&s.lat!=null&&s.lon!=null);
   let located=0;let nAgebsWithSchools=0;
   agebLayer=L.geoJSON({type:'FeatureCollection',features:allFeatures},{
-    style:{color:'#375a63',weight:1,fillColor:'#b3d8db',fillOpacity:.13},
+    style:f=>({color:'#375a63',weight:1,fillColor:'#b3d8db',fillOpacity:.13,dashArray:(agebCode(f).length===9?'4,3':null)}),
     onEachFeature:(f,l)=>{
       const inside=municipalSchools.filter(s=>geomContains([s.lon,s.lat],f.geometry));
       if(inside.length){located+=inside.length;nAgebsWithSchools++;}
       const cv=agebCode(f);
-      const label='<b>AGEB '+escapeHtml(cv)+'</b><br>'+fmt(inside.length)+' planteles SEP ubicados en el polígono'+
+      const kind=f.properties?.tipo_ageb|| (cv.length===9?'rural':'urbana');
+      const label='<b>AGEB '+escapeHtml(kind)+' '+escapeHtml(cv)+'</b><br>'+fmt(inside.length)+' planteles SEP ubicados en el polígono'+
         '<br><small>No hay indicadores clínicos válidos por AGEB. No representa domicilio ni estado nutricional de residentes.</small>';
       l.bindPopup(label);
       l.on('mouseover',()=>l.setStyle({weight:2.5,fillOpacity:.30}));
@@ -324,7 +338,7 @@ async function loadAgebs(){
     const bounds=agebLayer.getBounds();
     if(bounds.isValid())map.fitBounds(bounds.pad(.08),{maxZoom:12});
   }
-  status.textContent=allFeatures.length+' AGEB urbanas · '+nAgebsWithSchools+' con planteles SEP · fuente: '+which+'. Sin tasas de IMC por AGEB.';
+  status.textContent=allFeatures.length+' AGEB urbanas/rurales · '+nAgebsWithSchools+' con planteles SEP · fuente: '+which+(partialSource?' (fuente parcial)':'')+'. Sin tasas IMC válidas por AGEB.';
   status.className='polygon-status ok';
 }
 
