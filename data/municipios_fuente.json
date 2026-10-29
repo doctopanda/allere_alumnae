@@ -1,0 +1,10 @@
+{
+  "origen": "https://github.com/MacWilliXD/INEGI-geojson",
+  "archivo_fuente": "geojson_descargas/AGEM_26.geojson",
+  "revision_source_blob": "526e180444cecda76b773562d09858d7b329e4bd",
+  "desglose": "72 municipios de Sonora",
+  "clave": "CVEGEO municipal 26+3 dígitos",
+  "simplificacion": "Douglas–Peucker 0.002 grados por anillo, coordenadas redondeadas a 5 decimales",
+  "advertencia": "Geometría generalizada para visualización, no deslinde oficial. No inferir residencia de alumnos.",
+  "fecha_publicacion": "2026-10-28"
+}
