@@ -11,3 +11,20 @@
 .polygon-status.error{color:#aa5934;font-weight:700}
 .municipal-legend{position:absolute;top:17px;left:17px;z-index:450;display:flex;align-items:center;gap:8px;max-width:min(450px,85%);background:#fffefbf1;border:1px solid #d9e4da;box-shadow:0 2px 8px #0002;border-radius:8px;padding:9px 12px;font-size:10px;font-weight:800;color:#24483a}
 .municipal-legend span{color:#748578;font-weight:500}
+
+/* Mapa nutricional municipal: lectura del denominador y ausencia de datos */
+.nutrition-controls{background:#fff8ee;border:1px solid #efdfc5;border-radius:9px;padding:10px 11px;margin-top:11px}
+.nutrition-controls label{margin:0 0 6px!important}
+.risk-notice{font-size:10px;line-height:1.55;color:#765e40;padding:8px 0 6px;margin:0}
+.nutrition-detail{margin:8px 0 0;background:#fff;border-radius:8px;padding:11px;font-size:11px;color:#4a6657;line-height:1.6;border:1px solid #eae4da}
+.nutrition-detail strong{font-size:18px;font-family:Manrope,sans-serif;color:#9c4b37}
+.nutrition-detail small{font-size:10px;color:#817c73}
+.nutrition-detail p{margin:4px 0}
+#coverageControls{margin:12px 0 0}
+#coverageControls>label:first-child{margin-top:2px}
+.municipal-legend{flex-direction:column;align-items:flex-start;gap:5px}
+.municipal-legend>strong{font-size:11px}
+.legend-bins{display:flex;gap:6px;flex-wrap:wrap;margin-top:3px}
+.legend-bins>span{display:flex;gap:4px;align-items:center;font-size:9px;font-weight:500;color:#5b6960;white-space:nowrap}
+.legend-bins i{display:block;height:10px;width:13px;border-radius:2px;border:1px solid #64796d33}
+@media(max-width:780px){.municipal-legend{position:static;max-width:none;margin:8px;background:#fff;box-shadow:none}.map-panel{display:flex;flex-direction:column}.map-panel #map{order:1}.municipal-legend{order:0}.map-legend{position:absolute;bottom:34px}.map-footnote{bottom:5px}}
