@@ -1,0 +1,20 @@
+{
+  "fecha_corte": "2026-10-28",
+  "fuente_puntos": "SEP 2026 / 1,501 CCT del filtro IMSS",
+  "fuente_geometrias": "municipios_sonora.geojson derivado de INEGI-geojson",
+  "numero_cct": 1501,
+  "con_coordenadas": 1497,
+  "dentro_del_municipio_de_catalogo": 1496,
+  "fuera_del_municipio_de_catalogo": 1,
+  "sin_coordenadas": 4,
+  "coincidencia_pct": 99.93,
+  "excepciones": [
+    {
+      "cct": "26DPR0208V",
+      "municipio_catalogo": "Empalme",
+      "tipo": "punto_fuera_del_poligono_municipal",
+      "accion": "Validar coordenada/catálogo antes de asignación AGEB"
+    }
+  ],
+  "nota": "Los polígonos municipales se simplificaron para visualización. Una discrepancia espacial requiere revisión de fuente, no imputación automática. Geometrías sin microdatos."
+}
