@@ -138,7 +138,7 @@ async function loadPolygons(){
       l.on('mouseout',()=>l.setStyle(polygonStyle(f)));
       l.on('click',()=>{
         const selected=[...el('municipio').options].find(o=>normalizeMunicipio(o.value)===normalizeMunicipio(name));
-        if(selected){el('municipio').value=selected.value;applyFilters(true)}
+        if(selected){el('municipio').value=selected.value;applyFilters(true);loadAgebs();}
         else setPolygonStatus('Nombre de municipio por revisar: '+name,'error');
       });
     }
@@ -190,6 +190,132 @@ function refreshPolygonMetric(){
     for(let i=0;i<5;i++)b.innerHTML+='<span><i style="background:'+nutritionRamp[i]+'"></i>'+labels[i]+'</span>';
     b.innerHTML+='<span><i style="background:#c9d2cd"></i>Sin datos</span>';
   }
+}
+
+
+// AGEB URBANAS: geometría y conteo de escuelas, NO tasas de salud.
+// Punto escolar SEP => AGEB de ubicación del plantel; nunca inferir residencia de alumnos.
+function codeMunicipio(name){
+  if(!name)return null;
+  const id=MUNICIPIO_CODE_NAMES.findIndex(x=>normalizeMunicipio(x)===normalizeMunicipio(name));
+  return id>=0?String(id+1).padStart(3,'0'):null;
+}
+function readAgebs(input){
+  const obj=typeof input==='string'?JSON.parse(input):input;
+  if(!obj)return null;
+  if(obj.type==='FeatureCollection'&&Array.isArray(obj.features))return obj;
+  if(obj.type==='Feature')return {type:'FeatureCollection',features:[obj]};
+  let entries=obj.datos??obj.data??obj.features??obj.resultados??obj;
+  if(typeof entries==='string'){try{entries=JSON.parse(entries)}catch(e){return null}}
+  if(!Array.isArray(entries))return null;
+  const features=[];
+  for(const r of entries){
+    let item=r?.geojson??r?.geometry??r;
+    if(typeof item==='string'){try{item=JSON.parse(item)}catch(e){continue}}
+    if(item?.type==='FeatureCollection'){features.push(...item.features);continue}
+    if(item?.type==='Feature'){features.push(item);continue}
+    if(item?.type==='Polygon'||item?.type==='MultiPolygon'){
+      features.push({type:'Feature',properties:r.properties||r,geometry:item});
+      continue;
+    }
+    if(r?.geometry&&r.geometry.type)features.push({type:'Feature',properties:r.properties||r,geometry:r.geometry});
+  }
+  return features.length?{type:'FeatureCollection',features}:null;
+}
+function ringContains(point,ring){
+  const x=point[0],y=point[1];let inside=false;
+  for(let i=0,j=ring.length-1;i<ring.length;j=i++){
+    const a=ring[i],b=ring[j];
+    const intersect=((a[1]>y)!==(b[1]>y))&&(x<(b[0]-a[0])*(y-a[1])/(b[1]-a[1])+a[0]);
+    if(intersect)inside=!inside;
+  }
+  return inside;
+}
+function polygonContains(point,poly){
+  if(!Array.isArray(poly)||!poly.length||!ringContains(point,poly[0]))return false;
+  for(let i=1;i<poly.length;i++)if(ringContains(point,poly[i]))return false;
+  return true;
+}
+function geomContains(point,geom){
+  if(!geom)return false;
+  if(geom.type==='Polygon')return polygonContains(point,geom.coordinates);
+  if(geom.type==='MultiPolygon')return geom.coordinates.some(p=>polygonContains(point,p));
+  return false;
+}
+function agebCode(feature){
+  const p=feature.properties||{};
+  for(const k of ['cvegeo','CVEGEO','Cvegeo','cve_geo','CVE_GEO','clave','CLAVE']){
+    if(p[k])return String(p[k]).trim();
+  }
+  return '';
+}
+function clearAgebs(){
+  agebLoadToken++;
+  if(map&&agebLayer){map.removeLayer(agebLayer);agebLayer=null;}
+}
+async function loadAgebs(){
+  clearAgebs();
+  const status=el('agebStatus');
+  const name=el('municipio').value;
+  if(!el('showAgebs').checked){status.textContent='Capa AGEB desactivada.';return;}
+  if(!name){status.textContent='Selecciona primero un municipio para cargar sólo sus AGEB urbanas.';return;}
+  if(!map){status.textContent='Mapa no disponible.';return;}
+  const code=codeMunicipio(name);
+  if(!code){status.textContent='No se confirmó la clave INEGI de este municipio.';return;}
+  const requestId=agebLoadToken;
+  status.className='polygon-status';
+  status.textContent='Consultando AGEB urbanas de '+name+' (INEGI 26'+code+')…';
+  const local='./data/ageb/26'+code+'.geojson';
+  const inegi='https://gaia.inegi.org.mx/wscatgeo/v2/geo/agebu/26/'+code;
+  let featureCollection=null,which='';
+  for(const url of [local,inegi]){
+    try{
+      const resp=await fetch(url,{cache:'force-cache'});
+      if(!resp.ok)continue;
+      const candidate=readAgebs(await resp.json());
+      if(!candidate||candidate.features.length===0)continue;
+      featureCollection=candidate;which=url===local?'copia local':'servicio INEGI';break;
+    }catch(e){console.warn('AGEB no disponible:',url,String(e));}
+  }
+  if(requestId!==agebLoadToken)return;
+  if(!featureCollection){
+    status.textContent='AGEB no disponibles en esta sesión. Si INEGI bloquea la consulta, hay que generar los GeoJSON locales. Los polígonos municipales siguen visibles.';
+    status.className='polygon-status error';return;
+  }
+  const prefix='26'+code;
+  // Evitar que una respuesta global termine mezclando otros municipios.
+  let allFeatures=featureCollection.features.filter(f=>{
+    const code=agebCode(f);
+    return (code?code.startsWith(prefix):false) &&
+      ['Polygon','MultiPolygon'].includes(f.geometry?.type);
+  });
+  if(!allFeatures.length){
+    status.textContent='La respuesta AGEB no trajo códigos CVEGEO validados para '+name+'. No se mostrará una geometría ambigua.';
+    status.className='polygon-status error';return;
+  }
+  const municipalSchools=records.filter(s=>normalizeMunicipio(s.municipio)===normalizeMunicipio(name)&&s.lat!=null&&s.lon!=null);
+  let located=0;let nAgebsWithSchools=0;
+  agebLayer=L.geoJSON({type:'FeatureCollection',features:allFeatures},{
+    style:{color:'#375a63',weight:1,fillColor:'#b3d8db',fillOpacity:.13},
+    onEachFeature:(f,l)=>{
+      const inside=municipalSchools.filter(s=>geomContains([s.lon,s.lat],f.geometry));
+      if(inside.length){located+=inside.length;nAgebsWithSchools++;}
+      const cv=agebCode(f);
+      const label='<b>AGEB '+escapeHtml(cv)+'</b><br>'+fmt(inside.length)+' planteles SEP ubicados en el polígono'+
+        '<br><small>No hay indicadores clínicos válidos por AGEB. No representa domicilio ni estado nutricional de residentes.</small>';
+      l.bindPopup(label);
+      l.on('mouseover',()=>l.setStyle({weight:2.5,fillOpacity:.30}));
+      l.on('mouseout',()=>l.setStyle({weight:1,fillOpacity:.13}));
+    }
+  });
+  if(requestId!==agebLoadToken){agebLayer=null;return;}
+  agebLayer.addTo(map);
+  if(agebLayer.getLayers().length){
+    const bounds=agebLayer.getBounds();
+    if(bounds.isValid())map.fitBounds(bounds.pad(.08),{maxZoom:12});
+  }
+  status.textContent=allFeatures.length+' AGEB urbanas · '+nAgebsWithSchools+' con planteles SEP · fuente: '+which+'. Sin tasas de IMC por AGEB.';
+  status.className='polygon-status ok';
 }
 
 function popupText(s){
@@ -323,13 +449,14 @@ async function main(){
     syncMapMode();
     el('mapMode').addEventListener('change',syncMapMode);
     el('nutritionMetric').addEventListener('change',syncMapMode);
+    el('showAgebs').addEventListener('change',loadAgebs);
     el('showPolygons').addEventListener('change',togglePolygons);
     el('polyMetric').addEventListener('change',refreshPolygonMetric);
 
     el('search').addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(()=>applyFilters(true),230)});
-    el('municipio').addEventListener('change',()=>applyFilters(true));
+    el('municipio').addEventListener('change',()=>{applyFilters(true);loadAgebs();});
     el('estado').addEventListener('change',()=>applyFilters(true));
-    el('reset').addEventListener('click',()=>{el('search').value='';el('municipio').value='';el('estado').value='';applyFilters(true)});
+    el('reset').addEventListener('click',()=>{el('search').value='';el('municipio').value='';el('estado').value='';el('showAgebs').checked=false;applyFilters(true);clearAgebs();el('agebStatus').textContent='Selecciona un municipio para ver sus AGEB urbanas.';});
     el('download').addEventListener('click',exportList);
     el('tabMap').addEventListener('click',()=>switchTab('map'));
     el('tabHealth').addEventListener('click',()=>switchTab('health'));
