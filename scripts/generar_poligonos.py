@@ -19,10 +19,10 @@ BY_CODE = {f"{i:03d}": n for i,n in enumerate(NAMES, 1)}
 
 def name_for(f):
     p = f.get("properties") or {}
-    for k in ("NOMGEO","NOM_MUN","NOM_MPIO","NOMBRE","nom_mun","nomgeo","NOM_MUNICIPIO","municipio","name","NAME","nombre"):
+    for k in ("NOMGEO","NOM_MUN","NOM_MPIO","NOMBRE","nom_mun","nomgeo","nom_agem","NOM_MUNICIPIO","municipio","name","NAME","nombre"):
         if p.get(k):
             return str(p[k]).strip()
-    for k in ("CVE_MUN","CVEGEO","CVE_MPIO","cve_mun","id"):
+    for k in ("CVE_MUN","CVEGEO","CVE_MPIO","cve_mun","cve_agem","cvegeo","id"):
         val=str(p.get(k,"")).strip()
         if val[-3:] in BY_CODE:
             return BY_CODE[val[-3:]]
