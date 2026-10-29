@@ -1,0 +1,218 @@
+{
+  "titulo": "Distribución nutricional escolar: corte parcial, no prevalencia municipal",
+  "fecha_respaldo": "2026-10-24",
+  "fuente": "Respaldo IMSS Tableau, 194 CCT, corte 2026-10-24",
+  "clasificacion": "Categorías tal como aparecen en el tablero IMSS; Peso Bajo no equivale a grado de desnutrición clínica.",
+  "denominador": "Suma de las cuatro categorías IMC cuando están completas. No es el universo poblacional del municipio.",
+  "criterio_publicacion": "Al menos 5 CCT, 50 clasificaciones completas; se suprime si algún componente está oculto. No representar intervalos como riesgo poblacional.",
+  "total_cct_respaldo": 194,
+  "municipios_con_tasa": 7,
+  "municipios_sin_denominador_completo": 1,
+  "indicadores": [
+    {
+      "id": "peso_bajo",
+      "etiqueta": "Peso bajo",
+      "nota": "No equivale a desnutrición moderada o severa"
+    },
+    {
+      "id": "sobrepeso",
+      "etiqueta": "Sobrepeso",
+      "nota": "Categoría del tablero, separada de obesidad"
+    },
+    {
+      "id": "obesidad",
+      "etiqueta": "Obesidad",
+      "nota": "Categoría del tablero"
+    }
+  ],
+  "municipios": [
+    {
+      "municipio": "Agua Prieta",
+      "cct_respaldo": 12,
+      "evaluados_reporte": 2487,
+      "clasificados_imc": 2325,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 84,
+          "d": 2325,
+          "pct": 3.61
+        },
+        "sobrepeso": {
+          "n": 434,
+          "d": 2325,
+          "pct": 18.67
+        },
+        "obesidad": {
+          "n": 542,
+          "d": 2325,
+          "pct": 23.31
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    },
+    {
+      "municipio": "Caborca",
+      "cct_respaldo": 22,
+      "evaluados_reporte": 1249,
+      "clasificados_imc": 1166,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 27,
+          "d": 1166,
+          "pct": 2.32
+        },
+        "sobrepeso": {
+          "n": 263,
+          "d": 1166,
+          "pct": 22.56
+        },
+        "obesidad": {
+          "n": 272,
+          "d": 1166,
+          "pct": 23.33
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    },
+    {
+      "municipio": "Cajeme",
+      "cct_respaldo": 60,
+      "evaluados_reporte": 7764,
+      "clasificados_imc": 7620,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 171,
+          "d": 7620,
+          "pct": 2.24
+        },
+        "sobrepeso": {
+          "n": 1517,
+          "d": 7620,
+          "pct": 19.91
+        },
+        "obesidad": {
+          "n": 1850,
+          "d": 7620,
+          "pct": 24.28
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    },
+    {
+      "municipio": "Cananea",
+      "cct_respaldo": 8,
+      "evaluados_reporte": 1426,
+      "clasificados_imc": 1407,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 48,
+          "d": 1407,
+          "pct": 3.41
+        },
+        "sobrepeso": {
+          "n": 297,
+          "d": 1407,
+          "pct": 21.11
+        },
+        "obesidad": {
+          "n": 305,
+          "d": 1407,
+          "pct": 21.68
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    },
+    {
+      "municipio": "Empalme",
+      "cct_respaldo": 11,
+      "evaluados_reporte": 1228,
+      "clasificados_imc": 1187,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 54,
+          "d": 1187,
+          "pct": 4.55
+        },
+        "sobrepeso": {
+          "n": 249,
+          "d": 1187,
+          "pct": 20.98
+        },
+        "obesidad": {
+          "n": 229,
+          "d": 1187,
+          "pct": 19.29
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    },
+    {
+      "municipio": "Etchojoa",
+      "cct_respaldo": 10,
+      "evaluados_reporte": 487,
+      "clasificados_imc": null,
+      "indicadores": {
+        "peso_bajo": null,
+        "sobrepeso": null,
+        "obesidad": null
+      },
+      "apto_tasa_descriptiva": false,
+      "observacion": "Denominador incompleto por categoría suprimida. No publicar tasas."
+    },
+    {
+      "municipio": "Guaymas",
+      "cct_respaldo": 37,
+      "evaluados_reporte": 2946,
+      "clasificados_imc": 2900,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 112,
+          "d": 2900,
+          "pct": 3.86
+        },
+        "sobrepeso": {
+          "n": 528,
+          "d": 2900,
+          "pct": 18.21
+        },
+        "obesidad": {
+          "n": 668,
+          "d": 2900,
+          "pct": 23.03
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    },
+    {
+      "municipio": "Hermosillo",
+      "cct_respaldo": 7,
+      "evaluados_reporte": 1185,
+      "clasificados_imc": 1170,
+      "indicadores": {
+        "peso_bajo": {
+          "n": 21,
+          "d": 1170,
+          "pct": 1.79
+        },
+        "sobrepeso": {
+          "n": 215,
+          "d": 1170,
+          "pct": 18.38
+        },
+        "obesidad": {
+          "n": 188,
+          "d": 1170,
+          "pct": 16.07
+        }
+      },
+      "apto_tasa_descriptiva": true,
+      "observacion": "Distribución de categorías IMC del respaldo parcial, no prevalencia poblacional ni total municipal."
+    }
+  ]
+}
