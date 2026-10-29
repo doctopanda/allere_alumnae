@@ -1,0 +1,11 @@
+{
+  "esquema": "allere_alumnae_ageb_v1",
+  "unidad_territorial": "AGEB_URBANA_DE_UBICACION_DEL_PLANTEL",
+  "origen_requerido": "CCT -> coordenada SEP validada -> intersección geométrica AGEB INEGI",
+  "tipo_indicador": "distribución_descriptiva_IMC_respaldo",
+  "ciclo_escolar": null,
+  "fecha_corte": null,
+  "restricciones": "Solo publicar si >=5 CCT con datos, >=50 clasificados, categorías completas, filtro confirmado y autorización. No atribuir a lugar de residencia.",
+  "fuente": "No existen aún resúmenes públicos por AGEB.",
+  "registros": []
+}
