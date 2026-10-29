@@ -4,7 +4,7 @@ const fmt=x=>new Intl.NumberFormat('es-MX').format(x);
 const cssFor={COMPLETADA:'pin-completed',FALLIDA:'pin-failed',PENDIENTE:'pin-pending',SIN_ESTADO_LOCAL:'pin-historic'};
 const statusText={COMPLETADA:'Completada en checkpoint',FALLIDA:'Fallida: requiere reintento',PENDIENTE:'Pendiente de consulta',SIN_ESTADO_LOCAL:'Sin estado local'};
 let records=[],filtered=[],map,markers,health,markerByCct=new Map(),debounce;
-let municipalLayer=null;
+let municipalLayer=null, agebLayer=null, nutritionData=null, nutritionIndex=new Map(), agebLoadToken=0;
 const MUNICIPIO_CODE_NAMES=["Aconchi","Agua Prieta","Álamos","Altar","Arivechi","Arizpe","Átil","Bacadéhuachi","Bacanora","Bacerac","Bacoachi","Bácum","Banámichi","Baviácora","Bavispe","Benjamín Hill","Caborca","Cajeme","Cananea","Carbó","La Colorada","Cucurpe","Cumpas","Divisaderos","Empalme","Etchojoa","Fronteras","Granados","Guaymas","Hermosillo","Huachinera","Huásabas","Huatabampo","Huépac","Ímuris","Magdalena","Mazatán","Moctezuma","Naco","Nácori Chico","Nacozari de García","Navojoa","Nogales","Ónavas","Opodepe","Oquitoa","Pitiquito","Puerto Peñasco","Quiriego","Rayón","Rosario","Sahuaripa","San Felipe de Jesús","San Javier","San Luis Río Colorado","San Miguel de Horcasitas","San Pedro de la Cueva","Santa Ana","Santa Cruz","Sáric","Soyopa","Suaqui Grande","Tepache","Trincheras","Tubutama","Ures","Villa Hidalgo","Villa Pesqueira","Yécora","General Plutarco Elías Calles","Benito Juárez","San Ignacio Río Muerto"];
 const MUNICIPAL_URLS=['./data/municipios_sonora.geojson','https://raw.githubusercontent.com/MacWilliXD/INEGI-geojson/main/geojson_descargas/AGEM_26.geojson'];
 
@@ -37,26 +37,73 @@ function municipalityStats(){
   }
   return stats;
 }
+const nutritionRamp=['#fff4de','#f9ddb1','#f3b578','#dd8054','#b64432'];
+const nutritionCuts={peso_bajo:[1,2,3,4],sobrepeso:[15,18,21,24],obesidad:[15,18,21,24]};
+function nutritionSelected(){return el('nutritionMetric').value;}
+function nutritionRow(name){return nutritionIndex.get(normalizeMunicipio(name))||null;}
+function metricEntry(name){const r=nutritionRow(name);return r?.apto_tasa_descriptiva?r.indicadores?.[nutritionSelected()]||null:null;}
+function nutritionName(){return {peso_bajo:'Peso bajo',sobrepeso:'Sobrepeso',obesidad:'Obesidad'}[nutritionSelected()];}
+function nutritionSwatch(n,metric){
+  if(n===null||!Number.isFinite(n))return '#c9d2cd';
+  const cuts=nutritionCuts[metric]||nutritionCuts.obesidad;
+  let level=0;while(level<cuts.length&&n>=cuts[level])level++;
+  return nutritionRamp[level];
+}
 function polygonStyle(feature){
   const name=municipalityName(feature);
-  const stats=municipalityStats().get(normalizeMunicipio(name))||{cct:0,done:0};
-  const metric=el('polyMetric').value;
-  const score=metric==='avance'?(stats.cct?stats.done*100/stats.cct:-1):stats.cct;
-  let color='#dfe5e0';
-  if(metric==='avance'){
-    if(score>=95)color='#20735c';
-    else if(score>=85)color='#56a88c';
-    else if(score>=65)color='#a4c7a5';
-    else if(score>=0)color='#dec28b';
+  let color='#d7ded9',fillOpacity=.68;
+  if(el('mapMode').value==='nutricion'){
+    const e=metricEntry(name);
+    color=nutritionSwatch(e?.pct??null,nutritionSelected());
+    fillOpacity=.72;
   }else{
-    if(score>=100)color='#175f4f';
-    else if(score>=50)color='#348777';
-    else if(score>=20)color='#65aa94';
-    else if(score>=5)color='#a0cab3';
-    else if(score>0)color='#cfdfd2';
+    const stats=municipalityStats().get(normalizeMunicipio(name))||{cct:0,done:0};
+    const metric=el('polyMetric').value;
+    const score=metric==='avance'?(stats.cct?stats.done*100/stats.cct:-1):stats.cct;
+    if(metric==='avance'){
+      if(score>=95)color='#20735c';
+      else if(score>=85)color='#56a88c';
+      else if(score>=65)color='#a4c7a5';
+      else if(score>=0)color='#dec28b';
+    }else{
+      if(score>=100)color='#175f4f';
+      else if(score>=50)color='#348777';
+      else if(score>=20)color='#65aa94';
+      else if(score>=5)color='#a0cab3';
+      else if(score>0)color='#cfdfd2';
+    }
+    fillOpacity=.37;
   }
-  return {color:'#376759',weight:.9,opacity:.75,fillColor:color,fillOpacity:.35};
+  return {color:'#49685f',weight:.9,opacity:.85,fillColor:color,fillOpacity};
 }
+function municipalityPopupText(name){
+  const n=municipalityStats().get(normalizeMunicipio(name))||{cct:0,done:0};
+  const row=nutritionRow(name),e=metricEntry(name);
+  const common='<br><small>Del filtro Tableau: '+fmt(n.cct)+' CCT; '+fmt(n.done)+' completadas.</small>';
+  if(el('mapMode').value!=='nutricion')return '<b>'+escapeHtml(name)+'</b>'+common+'<br><small>Indicador de extracción, no prevalencia.</small>';
+  if(!row||!e)return '<b>'+escapeHtml(name)+'</b><br><strong>Sin datos nutricionales suficientes para colorear</strong>'+common;
+  return '<b>'+escapeHtml(name)+'</b><br><strong>'+escapeHtml(nutritionName())+': '+e.pct.toFixed(2)+'%</strong>'+
+    '<br>'+fmt(e.n)+' casos / '+fmt(e.d)+' clasificaciones IMC'+
+    '<br>'+fmt(row.cct_respaldo)+' escuelas en el respaldo 24/10/2026'+common+
+    '<br><small>Corte parcial de muestra; NO es tasa poblacional ni dato por domicilio.</small>';
+}
+function showNutritionDetail(name){
+  const detail=el('nutritionDetail');
+  if(!name){detail.textContent='Selecciona un municipio para ver numerador, denominador y cobertura de la muestra.';return;}
+  const row=nutritionRow(name),e=metricEntry(name);
+  if(!e){detail.textContent=name+': sin información IMC pública completa de este corte. No equivale a cero casos.';return;}
+  detail.innerHTML='<b>'+escapeHtml(name)+'</b><div><strong>'+e.pct.toFixed(2)+'%</strong> ('+escapeHtml(nutritionName())+')</div>'+
+    '<p>'+fmt(e.n)+' / '+fmt(e.d)+' clasificaciones en '+fmt(row.cct_respaldo)+' escuelas del respaldo.</p>'+
+    '<small>Muestra parcial, no prevalencia poblacional ni residencial.</small>';
+}
+function syncMapMode(){
+  const nutrition=el('mapMode').value==='nutricion';
+  el('nutritionControls').hidden=!nutrition;
+  el('coverageControls').hidden=nutrition;
+  refreshPolygonMetric();
+  showNutritionDetail(el('municipio').value);
+}
+
 function setPolygonStatus(msg,status=''){
   const node=el('polygonStatus');node.textContent=msg;node.className='polygon-status '+status;
 }
@@ -86,8 +133,7 @@ async function loadPolygons(){
       if(name)named++;
       const stat=counts.get(normalizeMunicipio(name))||{cct:0,done:0};
       const pct=stat.cct?(100*stat.done/stat.cct).toFixed(1)+'%':'Sin CCT observadas';
-      const msg='<b>'+escapeHtml(name||'Municipio sin nombre')+'</b><br>'+fmt(stat.cct)+' CCT del filtro Tableau<br>'+fmt(stat.done)+' completadas ('+pct+')<br><small>No es prevalencia de obesidad</small>';
-      l.bindTooltip(msg,{sticky:true});
+      l.bindTooltip(municipalityPopupText(name),{sticky:true});
       l.on('mouseover',()=>l.setStyle({weight:2.3,fillOpacity:.55}));
       l.on('mouseout',()=>l.setStyle(polygonStyle(f)));
       l.on('click',()=>{
@@ -117,6 +163,7 @@ async function loadPolygons(){
   if(el('showPolygons').checked)municipalLayer.addTo(map);
   el('municipalLegend').hidden=!el('showPolygons').checked;
   setPolygonStatus('72 municipios cargados · '+(origin.startsWith('./')?'capa local':'fuente externa')+' · clic para filtrar','ok');
+  refreshPolygonMetric();
   map.attributionControl.addAttribution('<a href="https://github.com/MacWilliXD/INEGI-geojson" target="_blank" rel="noopener">Geometrías municipales (compilación INEGI-geojson)</a>');
 }
 function togglePolygons(){
@@ -127,9 +174,22 @@ function togglePolygons(){
   el('municipalLegend').hidden=!enabled;
 }
 function refreshPolygonMetric(){
-  if(!municipalLayer)return;
-  municipalLayer.eachLayer(l=>l.setStyle(polygonStyle(l.feature)));
-  el('legendMetric').textContent=el('polyMetric').value==='avance'?'más intenso = mayor % de consultas completadas':'más intenso = mayor número de CCT';
+  if(municipalLayer)municipalLayer.eachLayer(l=>{
+    l.setStyle(polygonStyle(l.feature));
+    const name=municipalityName(l.feature);
+    l.unbindTooltip();
+    l.bindTooltip(municipalityPopupText(name),{sticky:true});
+  });
+  const nutrition=el('mapMode').value==='nutricion';
+  el('legendTitle').textContent=nutrition?nutritionName()+' · corte parcial':'Cobertura de extracción';
+  el('legendMetric').textContent=nutrition?'% de clasificados IMC · 7 municipios':'CCT observadas o consultas completadas';
+  const b=el('legendBins');b.innerHTML='';
+  if(nutrition){
+    const cuts=nutritionCuts[nutritionSelected()];
+    const labels=['< '+cuts[0]+'%',cuts[0]+'–<'+cuts[1]+'%',cuts[1]+'–<'+cuts[2]+'%',cuts[2]+'–<'+cuts[3]+'%','≥ '+cuts[3]+'%'];
+    for(let i=0;i<5;i++)b.innerHTML+='<span><i style="background:'+nutritionRamp[i]+'"></i>'+labels[i]+'</span>';
+    b.innerHTML+='<span><i style="background:#c9d2cd"></i>Sin datos</span>';
+  }
 }
 
 function popupText(s){
@@ -213,6 +273,7 @@ function applyFilters(autoFit=false){
   const estado=el('estado').value;
   filtered=records.filter(s=>(!municipio||s.municipio===municipio)&&(!estado||s.estado===estado)&&(!q||[s.cct,s.nombre,s.localidad,s.municipio].some(t=>(t||'').toLocaleLowerCase('es').includes(q))));
   displayList();displayMap(autoFit);
+  showNutritionDetail(el('municipio').value);
 }
 function exportList(){
   const h=['CCT','Escuela SEP','Municipio','Localidad','Latitud','Longitud','Estado de extracción'];
@@ -249,14 +310,19 @@ function populateHealth(){
 }
 async function main(){
   try{
-    const [schoolsResponse,healthResponse]=await Promise.all([fetch('./data/escuelas.json'),fetch('./data/salud_agregada.json')]);
-    if(!schoolsResponse.ok||!healthResponse.ok)throw Error('Error al cargar datos');
-    const [info,hs]=await Promise.all([schoolsResponse.json(),healthResponse.json()]);
+    const [schoolsResponse,healthResponse,nutritionResponse]=await Promise.all([fetch('./data/escuelas.json'),fetch('./data/salud_agregada.json'),fetch('./data/nutricion_municipal_parcial.json')]);
+    if(!schoolsResponse.ok||!healthResponse.ok||!nutritionResponse.ok)throw Error('Error al cargar datos');
+    const [info,hs,nm]=await Promise.all([schoolsResponse.json(),healthResponse.json(),nutritionResponse.json()]);
+    nutritionData=nm;
+    nutritionIndex=new Map(nm.municipios.map(r=>[normalizeMunicipio(r.municipio),r]));
     health=hs;records=info.records.map(school);
     if(records.length!==1501)throw Error('Cantidad de CCT distinta a la esperada: '+records.length);
     filtered=records;
     updateKpis();fillMunicipalities();initMap();applyFilters(false);populateHealth();
     loadPolygons();
+    syncMapMode();
+    el('mapMode').addEventListener('change',syncMapMode);
+    el('nutritionMetric').addEventListener('change',syncMapMode);
     el('showPolygons').addEventListener('change',togglePolygons);
     el('polyMetric').addEventListener('change',refreshPolygonMetric);
 
