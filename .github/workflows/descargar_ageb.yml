@@ -1,0 +1,32 @@
+name: Descargar AGEB urbanas de Sonora
+on:
+  workflow_dispatch:
+    inputs:
+      municipio:
+        description: 'Clave municipal INEGI, tres dígitos (ej. 030 Hermosillo, 018 Cajeme)'
+        required: true
+        type: string
+permissions:
+  contents: write
+jobs:
+  ageb:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: python -m pip install --disable-pip-version-check shapely==2.0.7
+      - name: Validar clave y descargar GeoJSON oficial
+        env:
+          MUNICIPIO: ${{ inputs.municipio }}
+        run: |
+          if ! [[ "$MUNICIPIO" =~ ^[0-9]{3}$ ]]; then echo "Clave municipal inválida"; exit 1; fi
+          python scripts/preparar_ageb_sonora.py --municipio "$MUNICIPIO"
+      - name: Incorporar geometría pública al repositorio
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ageb/*.geojson
+          git diff --cached --quiet || (git commit -m "Incorporar AGEB urbanas del municipio de Sonora" && git push)
