@@ -1,0 +1,59 @@
+/* ALLERE ALUMNAE · Modo mapa PWA / móvil: aislado por ?app=1 */
+html.allere-mobile-map,html.allere-mobile-map body{height:100%;height:100dvh;overflow:hidden}
+html.allere-mobile-map body{margin:0;background:#edf5ef}
+html.allere-mobile-map .shell{display:block!important;height:calc(100dvh - 56px)!important;min-height:0!important;margin-top:56px!important;overflow:hidden!important}
+html.allere-mobile-map .center{display:flex!important;flex-direction:column!important;height:100%!important;min-height:0!important;overflow:hidden!important}
+html.allere-mobile-map .left,html.allere-mobile-map .right{position:fixed!important;display:flex!important;flex-direction:column!important;top:0;bottom:0;left:0;height:100dvh!important;max-height:100dvh!important;width:min(380px,94vw)!important;min-width:0!important;z-index:1100!important;transform:translateX(-105%);transition:transform .22s ease;overflow:hidden;box-shadow:14px 0 45px #113b393b;border:0}
+html.allere-mobile-map .left.mobile-open{transform:translateX(0)}
+html.allere-mobile-map .right{top:auto;right:0;bottom:0;width:100%!important;height:min(78dvh,700px)!important;max-height:78dvh!important;transform:translateY(105%);border-radius:22px 22px 0 0;box-shadow:0 -10px 38px #123e3b4d}
+html.allere-mobile-map .right.mobile-open{transform:translateY(0)}
+html.allere-mobile-map .left-scroll{display:block!important;columns:1!important;flex:1;overflow-y:auto!important;padding:18px!important;-webkit-overflow-scrolling:touch}
+html.allere-mobile-map .right-scroll{overflow-y:auto!important;padding:15px 18px 35px!important;-webkit-overflow-scrolling:touch;flex:1}
+html.allere-mobile-map .toolbar{min-height:0!important;padding:11px 13px!important;display:flex!important;flex-direction:row!important;gap:8px!important;align-items:center!important}
+html.allere-mobile-map .toolbar h2{font-size:14px!important;margin:0!important;line-height:1.25!important}
+html.allere-mobile-map .toolbar .smallcaps,html.allere-mobile-map .toolbar p{display:none!important}
+html.allere-mobile-map .atlas-nav{justify-content:flex-end!important;width:auto!important;min-width:0!important}
+html.allere-mobile-map .portal-dashboard-link{display:none!important}
+html.allere-mobile-map .tabs{display:flex!important;width:auto!important;max-width:175px;flex-wrap:nowrap;white-space:nowrap;overflow-x:auto!important}
+html.allere-mobile-map .tabs button{font-size:10px!important;padding:8px 9px!important}
+html.allere-mobile-map .metric-switcher{min-height:44px!important;flex-wrap:nowrap!important;gap:7px!important;overflow-x:auto!important;flex-shrink:0!important;padding:7px 10px!important;scrollbar-width:none}
+html.allere-mobile-map .metric-switcher::-webkit-scrollbar{display:none}
+html.allere-mobile-map .metric-switcher .switcher-label{display:none!important}
+html.allere-mobile-map .metric-chip{flex:0 0 auto!important;min-height:35px!important;font-size:10px!important;padding:7px 10px!important}
+html.allere-mobile-map .territory-ribbon{grid-template-columns:repeat(3,minmax(0,1fr))!important;flex-shrink:0!important;min-height:48px!important}
+html.allere-mobile-map .territory-ribbon>div:first-child{display:none!important}
+html.allere-mobile-map .territory-ribbon>div{min-height:48px!important;padding:7px 8px!important}
+html.allere-mobile-map .territory-ribbon strong{font-size:12px!important;line-height:1.2!important;overflow-wrap:anywhere}
+html.allere-mobile-map .territory-ribbon small{font-size:9px!important}
+html.allere-mobile-map .map-panel{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;position:relative!important}
+html.allere-mobile-map #map{height:100%!important;min-height:0!important}
+html.allere-mobile-map .leaflet-container{touch-action:pan-x pan-y}
+html.allere-mobile-map .leaflet-control-zoom{margin-top:12px!important;margin-right:11px!important}
+html.allere-mobile-map .legend{bottom:20px!important;left:9px!important;padding:8px 10px!important;min-width:0!important;max-width:60%!important}
+html.allere-mobile-map .legend p{display:none!important}
+html.allere-mobile-map .geo-status{display:none!important}
+html.allere-mobile-map .boobok-map-widget{top:10px!important;left:9px!important;max-width:150px!important}
+html.allere-mobile-map .boobok-map-button{padding:3px 6px 3px 3px!important;min-height:43px!important}
+html.allere-mobile-map .boobok-map-button img{width:35px!important;height:35px!important;object-fit:contain!important}
+html.allere-mobile-map .boobok-map-button small{display:none!important}
+html.allere-mobile-map .boobok-map-button strong{font-size:11px!important}
+html.allere-mobile-map .school-map-legend{top:65px!important;right:8px!important;max-width:130px!important;font-size:9px!important}
+html.allere-mobile-map .table-panel,html.allere-mobile-map .who-panel{flex:1!important;min-height:0!important;max-height:none!important;overflow-y:auto!important;-webkit-overflow-scrolling:touch}
+html.allere-mobile-map .bottom{display:none!important}
+html.allere-mobile-map .left label,html.allere-mobile-map .left button,html.allere-mobile-map .left select{font-size:14px!important}
+html.allere-mobile-map .left select,html.allere-mobile-map .left input[type=search]{min-height:46px!important}
+html.allere-mobile-map .boobok-intro-image{height:130px!important;min-height:130px!important;width:100px!important;min-width:100px!important}
+html.allere-mobile-map .boobok-intro-image img{object-fit:contain!important;transform:none!important}
+html.allere-mobile-map .detail-top{padding:12px 18px!important;flex-shrink:0}
+html.allere-mobile-map .detail-top h2{font-size:19px!important;margin:4px 0!important}
+html.allere-mobile-map .detail-top p{font-size:10px!important}
+.allere-map-mobilebar{position:fixed;inset:0 0 auto;height:56px;z-index:1000;background:#0a5852;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 12px;gap:9px;box-shadow:0 3px 12px #123c3522}
+.allere-map-mobilebar>span{font-weight:900;letter-spacing:.4px;font-size:12px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.allere-map-mobilebar button{font:700 12px system-ui;min-height:40px;border:1px solid #ffffff47;color:#fff;border-radius:11px;background:#16776e;padding:8px 11px}
+.allere-mobile-scrim{position:fixed;inset:0;z-index:1050;background:#082b2a70;backdrop-filter:blur(1px)}
+.allere-mobile-close{flex-shrink:0;width:100%;border:0;border-bottom:1px solid #c9dfd5;padding:14px 16px;text-align:left;background:#e7f5ed;color:#11564b;font:800 14px system-ui;min-height:48px}
+html.allere-mobile-map .boobok-dialog{z-index:1500!important}
+html.allere-mobile-map .boobok-dialog::backdrop{z-index:1499}
+@media(min-width:850px){html.allere-mobile-map .right{left:auto;width:min(440px,100%)!important;border-radius:19px 0 0 0}}
+@media(max-width:370px){.allere-map-mobilebar{gap:5px;padding:0 7px}.allere-map-mobilebar>span{font-size:10px}.allere-map-mobilebar button{padding:6px 8px;font-size:11px}html.allere-mobile-map .toolbar h2{font-size:12px!important}html.allere-mobile-map .toolbar{gap:4px!important}}
+@media(prefers-reduced-motion:reduce){html.allere-mobile-map .left,html.allere-mobile-map .right{transition:none}}
