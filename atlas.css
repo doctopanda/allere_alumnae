@@ -13,3 +13,8 @@
 .school-colors span{display:flex;align-items:center;gap:5px}
 .school-key{width:10px;height:10px;flex:none;display:inline-block;border:1px solid #fff;box-shadow:0 0 0 1px #94a19a;border-radius:50%}
 .school-key-extracted{background:#218569}.school-key-tableau{background:#dca45b}.school-key-sep{background:#81919b}
+
+/* Consulta de AGEB censales aun sin geometría INEGI disponible */
+.ageb-search{width:100%;padding:9px 10px;border-radius:8px;border:1px solid #d1dfd5;background:#fff;color:#214a37;font-size:11px;margin:8px 0}
+.ageb-census-list{max-height:235px;overflow-y:auto;scrollbar-width:thin;border:1px solid #e2e9e1;border-radius:8px;padding:5px 10px;background:#fff}
+.ageb-census-list>.territory-link{font-size:10px;line-height:1.35}
