@@ -101,6 +101,19 @@
         <div class="health-municipios">
           <div class="between"><div><h3>Agregación municipal disponible</h3><p>Sólo municipios con cinco o más CCT y al menos cincuenta evaluados en el respaldo.</p></div></div>
           <div id="municipalityHealth" class="health-grid"></div>
+          <div class="health-table-panel">
+            <div class="health-table-head">
+              <div><h3>Detalle municipal recuperado</h3><p>Numerador / clasificaciones IMC, con tres indicadores comparables dentro del respaldo parcial.</p></div>
+              <button type="button" id="downloadNutrition" class="export-data">Exportar datos agregados</button>
+            </div>
+            <div class="table-scroll">
+              <table class="nutrition-table">
+                <thead><tr><th>Municipio</th><th>CCT<br>respaldo</th><th>Clasificados<br>IMC</th><th>Peso bajo</th><th>Sobrepeso</th><th>Obesidad</th><th>Calidad</th></tr></thead>
+                <tbody id="nutritionTable"></tbody>
+              </table>
+            </div>
+            <p class="table-hint">Los porcentajes son descriptivos del corte recuperado. Cuando una categoría fue suprimida o falta denominador completo, la tasa se omite. No hay inferencia residencial por AGEB.</p>
+          </div>
         </div>
         <div class="warning-block"><strong>Interpretación obligatoria</strong><p>Se muestran conteos de un subconjunto no aleatorio. No se calculan tasas estatales ni comparaciones de desempeño entre escuelas. Se suprimen subgrupos municipales menores de once.</p></div>
       </section>
