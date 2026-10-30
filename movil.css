@@ -116,3 +116,6 @@ header.app-top{flex:0 0 auto;min-height:69px;display:flex;align-items:center;gap
 @media(min-width:700px){.view{padding:24px 36px 38px}.kpi-grid{grid-template-columns:repeat(4,1fr)}.filters{max-width:670px}.hero{grid-template-columns:1fr 175px;padding:22px 27px}.hero-portrait{width:170px;height:188px}.hero h1{font-size:29px}.card{padding:20px}.status-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.legend-list{grid-template-columns:repeat(4,1fr)}.sheet{max-width:660px;left:calc(50% - 330px);right:auto;border-radius:22px 22px 0 0}}
 @media(max-width:360px){.top-cut{display:none}.hero{grid-template-columns:1fr 85px}.hero-portrait{width:85px;height:155px}.hero h1{font-size:19px}.tabbar button{min-width:0}.kpi-grid{gap:7px}.kpi{padding:12px 10px}.section-head h2{font-size:16px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+/* Cuatro pestañas compactas sin desplazamiento horizontal */
+.tabbar button{min-width:0}
