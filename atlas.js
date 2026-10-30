@@ -11,7 +11,7 @@ const thresholds={under5:[500,2000,6000,20000],under5_share:[5,6,7,8],"Peso Bajo
 const healthCategories=['Peso Bajo','Normal','Sobrepeso','Obesidad'];
 const metricNames={'Peso Bajo':'Peso bajo · categoría Tableau',Normal:'Peso normal · categoría Tableau',Sobrepeso:'Sobrepeso · categoría Tableau',Obesidad:'Obesidad · categoría Tableau',cct_extraidas:'Escuelas extraídas / disponibles en Tableau',cct_evaluadas:'Escuelas con evaluaciones / disponibles en Tableau',pct_menores_evaluados:'Menores evaluados / menores registrados',pct_tableau_en_sep:'Escuelas visibles en Tableau / padrón SEP',under5:'Población residente de 0–4 años · CONAPO',under5_share:'Población de 0–4 años como % de residentes · CONAPO'};
 let conapo=null,agebCensus=null, data=null,geo=null,schoolData=null,tableauSchoolNames=new Map(),map=null,geoLayer=null,schoolLayer=null,agebLayer=null,agebItems=[],agebSelected=null,agebSerial=0;
-let state={level:'municipio',metric:'Obesidad',district:'',municipality:'',tab:'map',showSchools:false,popYear:2026};
+let state={level:'municipio',metric:'Obesidad',district:'',municipality:'',tab:'map',showSchools:true,schoolFilter:'TODAS',popYear:2026};
 let byNormDistrict=new Map();
 const agebRequestCache=new Map();
 function numberBox(title,val,detail=''){return '<div class="info-card"><small>'+sanitize(title)+'</small><b>'+fmt(val)+'</b><span>'+sanitize(detail)+'</span></div>';}
@@ -102,22 +102,57 @@ function renderTitle(){const title=metricNames[state.metric];$('mapTitle').textC
  $('filterNotice').textContent=caution;
 }
 function layerPoints(){return schoolData.catalogo_escuelas_2026;}
+function schoolAreaRows(){
+ let points=layerPoints();
+ if(state.municipality)points=points.filter(x=>x[1]===norm(state.municipality));
+ else if(state.district)points=points.filter(x=>byNormDistrict.get(x[1])===state.district);
+ if(state.level==='ageb'&&agebSelected?._geometry)
+  points=points.filter(x=>x[2]!=null&&x[3]!=null&&pInGeom([x[3],x[2]],agebSelected._geometry));
+ return points;
+}
+function schoolVisibleRows(){
+ const points=schoolAreaRows();
+ return state.schoolFilter==='TODAS'?points:points.filter(x=>x[4]===state.schoolFilter);
+}
+function refreshSchoolCounts(){
+ if(!$('schoolCounts')||!schoolData)return;
+ const pts=schoolAreaRows(),cnt={EXTRAIDA:0,TABLEAU:0,SEP:0};
+ for(const p of pts){if(Object.hasOwn(cnt,p[4]))cnt[p[4]]++;}
+ const current=schoolVisibleRows();
+ const located=current.filter(x=>x[2]!=null&&x[3]!=null).length;
+ $('schoolCounts').innerHTML=
+  '<b>'+fmt(pts.length)+' CCT SEP en el territorio</b><br>'+
+  '<span class="school-figure-green">'+fmt(cnt.EXTRAIDA)+' extraídas</span> · '+
+  '<span class="school-figure-amber">'+fmt(cnt.TABLEAU)+' en Tableau pendientes</span> · '+
+  '<span class="school-figure-grey">'+fmt(cnt.SEP)+' sólo SEP</span><br>'+
+  '<strong>'+fmt(located)+' puntos visibles según filtro</strong>'+
+  (located<current.length?' · '+fmt(current.length-located)+' sin coordenadas':'')+
+  (state.showSchools?'':' · capa apagada');
+}
 function refreshSchoolLayer(){
  if(!map||!schoolData)return;
  if(schoolLayer){map.removeLayer(schoolLayer);schoolLayer=null;}
+ refreshSchoolCounts();
  if(!state.showSchools)return;
  schoolLayer=L.layerGroup();
- let points=layerPoints().filter(x=>x[2]!=null&&x[3]!=null);
- if(state.municipality)points=points.filter(x=>x[1]===norm(state.municipality));
- else if(state.district)points=points.filter(x=>byNormDistrict.get(x[1])===state.district);
+ const points=schoolVisibleRows().filter(x=>x[2]!=null&&x[3]!=null);
  const canvas=L.canvas({padding:.25});
- for(const row of points){const color={EXTRAIDA:'#218569',TABLEAU:'#dca45b',SEP:'#8a9b9a'}[row[4]]||'#87918a';
-  L.circleMarker([row[2],row[3]],{renderer:canvas,radius:3,weight:.5,color:'#fff',fillColor:color,fillOpacity:.95})
-  .bindPopup('<b>CCT '+sanitize(row[0])+'</b><br>'+sanitize(row[4]==='EXTRAIDA'?'Datos del tablero capturados':row[4]==='TABLEAU'?'En filtro Tableau sin captura confirmada':'Padrón SEP, no observada en filtro')+'<br><small>No se publican cifras clínicas por escuela.</small>')
-  .addTo(schoolLayer);
+ for(const row of points){
+  const color={EXTRAIDA:'#218569',TABLEAU:'#dca45b',SEP:'#81919b'}[row[4]]||'#87918a';
+  const msg=row[4]==='EXTRAIDA'?'Datos escolares agregados extraídos del tablero':
+   row[4]==='TABLEAU'?'CCT en filtro Tableau, extracción pendiente':
+   'CCT en padrón SEP; no observada en la lista recuperada de Tableau';
+  L.circleMarker([row[2],row[3]],{
+   renderer:canvas,radius:row[4]==='EXTRAIDA'?4:3.1,weight:1.1,color:'#ffffff',
+   fillColor:color,fillOpacity:.93
+  }).bindPopup('<b>CCT '+sanitize(row[0])+'</b><br>'+
+     '<b>'+sanitize(row[1])+'</b><br>'+sanitize(msg)+
+     '<br><small>La extracción no implica que todos los niños hayan sido evaluados. No se publican datos clínicos por escuela.</small>')
+   .addTo(schoolLayer);
  }
  schoolLayer.addTo(map);
 }
+
 function renderSidebar(){
  const r=selectedRecord(),isAgeB=!!(state.level==='ageb'&&agebSelected);
  const showName=isAgeB?'AGEB '+agebSelected.nombre:(r?.nombre||'Sonora');
@@ -189,10 +224,10 @@ async function reloadAgebs(){clearAgebs();if(state.level!=='ageb')return;if(!sta
  const pts=schoolData.catalogo_escuelas_2026.filter(r=>r[1]===norm(mun)&&r[2]!=null);
  const list=[];
  agebLayer=L.geoJSON({type:'FeatureCollection',features:feats},{style:styleAgeB,onEachFeature:(f,layer)=>{
- const id=agebCode(f);if(!id)return;const rec=agebCounts(f,pts);rec.nombre=id;rec.tipo=f.properties?.tipo_ageb||(id.length>9?'urbana':'rural');rec.distrito=initialMunicipal(mun)?.distrito;
+ const id=agebCode(f);if(!id)return;const rec=agebCounts(f,pts);rec.nombre=id;rec._geometry=f.geometry;rec.tipo=f.properties?.tipo_ageb||(id.length>9?'urbana':'rural');rec.distrito=initialMunicipal(mun)?.distrito;
  list.push(rec);
  layer.bindTooltip('<b>AGEB '+sanitize(id)+'</b><br>'+fmt(rec.cct_extraidas)+' extraídas / '+fmt(rec.cct_tableau)+' en Tableau<br>'+fmt(rec.cct_sep)+' CCT SEP<br>Residentes 0–4 INEGI 2020: '+fmt(rec.poblacion_0_4_censo_2020)+'<br>Sin tasas IMC por AGEB',{sticky:true});
- layer.on('click',()=>{agebSelected=rec;renderSidebar();layer.openTooltip();});
+ layer.on('click',()=>{agebSelected=rec;renderSidebar();refreshSchoolLayer();layer.openTooltip();});
  }}).addTo(map);
  agebItems=list;if(agebLayer.getBounds().isValid())map.fitBounds(agebLayer.getBounds().pad(.04),{maxZoom:13});
  $('geoStatus').textContent=fmt(list.length)+' AGEB cargadas · fuente: '+sources.join(' + ')+(agebCensus?' · censo INEGI 2020 enlazado':' · sin tabulado P_0A4 descargado');$('filterNotice').textContent='AGEB = lugar del plantel SEP. Los porcentajes disponibles son sólo de extracción de CCT, no indicadores antropométricos ni población residente.';renderSidebar();
@@ -238,7 +273,8 @@ async function main(){
   $('distrito').addEventListener('change',()=>selectDistrict($('distrito').value));
   $('municipio').addEventListener('change',()=>{const v=$('municipio').value;if(v)selectMunicipio(v);else{state.municipality='';agebSelected=null;syncFilters();applyMap();renderSidebar();if(state.level==='ageb')reloadAgebs();else fitSelection()}});
   $('showSchools').addEventListener('change',()=>{state.showSchools=$('showSchools').checked;refreshSchoolLayer()});
-  $('reset').addEventListener('click',()=>{state.district='';state.municipality='';state.level='municipio';state.metric='Obesidad';$('nivel').value=state.level;$('metrica').value=state.metric;$('showSchools').checked=false;state.showSchools=false;syncFilters();clearAgebs();applyMap();fitSelection();renderSidebar()});
+  $('schoolFilter').addEventListener('change',()=>{state.schoolFilter=$('schoolFilter').value;refreshSchoolLayer()});
+  $('reset').addEventListener('click',()=>{state.district='';state.municipality='';state.level='municipio';state.metric='Obesidad';$('nivel').value=state.level;$('metrica').value=state.metric;$('showSchools').checked=true;state.showSchools=true;$('schoolFilter').value='TODAS';state.schoolFilter='TODAS';syncFilters();clearAgebs();applyMap();fitSelection();renderSidebar()});
   $('tabMap').addEventListener('click',()=>changeTab('map'));$('tabTable').addEventListener('click',()=>changeTab('table'));$('tabWHO').addEventListener('click',()=>changeTab('who'));$('tabPopulation').addEventListener('click',()=>changeTab('population'));$('exportTable').addEventListener('click',downloadTable);
  }catch(e){console.error(e);$('geoStatus').textContent='Error de carga: '+e.message;$('map').innerHTML='<p style="padding:30px">No se pudo cargar la versión nueva. Consulta la consola o recarga el sitio.</p>';}
 }
