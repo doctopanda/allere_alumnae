@@ -1,15 +1,15 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#143d34"><meta name="description" content="ALLERE ALUMNAE | Atlas escolar nutricional y cobertura de Sonora"><title>ALLERE ALUMNAE | Atlas nutricional escolar</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"><link rel="stylesheet" href="./atlas.css"></head><body>
 <div class="shell">
  <aside class="left">
- <div class="brand"><div class="brand-emblem"><img src="./assets/boobok_guardian.webp" alt="Retrato del guardián BOOBOK" loading="eager"></div><div><span class="smallcaps">PLATAFORMA INTEGRAL DE NUTRICIÓN Y CUIDADO INFANTIL</span><h1>ALLERE <em>ALUMNAE</em></h1><p>SONORA · ATLAS NUTRICIONAL 2026</p></div></div>
+ <div class="brand"><div class="brand-emblem"><img src="./assets/boobok/BOOBOK_avatar_128.png" srcset="./assets/boobok/BOOBOK_avatar_256.png 2x" alt="BOOBOK, guardián de la infancia" width="58" height="58" loading="eager"></div><div><span class="smallcaps">PLATAFORMA INTEGRAL DE NUTRICIÓN Y CUIDADO INFANTIL</span><h1>ALLERE <em>ALUMNAE</em></h1><p>SONORA · ATLAS NUTRICIONAL 2026</p></div></div>
  <div class="left-scroll">
   <section class="boobok-intro" aria-label="Identidad BOOBOK">
-    <div class="boobok-intro-image"><img src="./assets/boobok_guardian.webp" alt="BOOBOK entre hojas tropicales y flores rosas" loading="lazy"></div>
+    <div class="boobok-intro-image"><img src="./assets/boobok/BOOBOK_avatar_256.png" alt="Figura ilustrada de BOOBOK, sapo guardián con flor rosa, hojas verdes y tonos turquesa" width="96" height="121" loading="lazy"></div>
     <div class="boobok-intro-copy">
       <span class="boobok-overline">MOTOR DE VIGILANCIA NUTRICIONAL</span>
       <strong>BOOBOK</strong>
       <p>Guardián infantil y motor de vigilancia nutricional.</p>
-      <button type="button" id="showBoobokIdentity" class="boobok-show">Abrir identidad completa <span aria-hidden="true">↗</span></button>
+      <button type="button" id="showBoobokIdentity" class="boobok-show">Conocer identidad y funciones <span aria-hidden="true">↗</span></button>
     </div>
   </section>
   <div class="eyebrow">CORTE IMSS / 28 OCT 2026</div><h2>La salud escolar, <span>sobre el territorio.</span></h2>
@@ -57,7 +57,14 @@
    <div><small>Evaluados / registrados</small><strong id="ribbonEvaluated">120,858 / 222,170</strong></div>
    <div><small>Avance de evaluación</small><strong id="ribbonCoverage">54.4%</strong></div>
  </div>
- <section id="mapPanel" class="map-panel"><div id="map"></div><div id="schoolMapLegend" class="school-map-legend" hidden><strong>Escuelas activadas</strong><span><i class="school-key school-key-extracted"></i>Extraídas</span><span><i class="school-key school-key-tableau"></i>Pendientes</span><span><i class="school-key school-key-sep"></i>SEP</span></div><div class="legend"><div class="between"><b id="legendTitle">Obesidad</b><small id="legendNote">Escuelas con datos suficientes</small></div><div id="legendBins" class="legend-bins"></div><p>Gris = sin dato válido, nunca ausencia de casos. Porcentajes del subconjunto analizado.</p></div><div id="geoStatus" class="geo-status">Límites municipales · Fuente cartográfica derivada de INEGI</div></section>
+ <section id="mapPanel" class="map-panel"><div id="map"></div>
+ <div class="boobok-map-widget" aria-label="Identidad del motor de vigilancia BOOBOK">
+   <button type="button" id="boobokMapBadge" class="boobok-map-button" aria-label="Abrir ficha e identidad visual de BOOBOK">
+     <img src="./assets/boobok/BOOBOK_avatar_128.png" srcset="./assets/boobok/BOOBOK_avatar_256.png 2x" alt="" width="56" height="56">
+     <span><strong>BOOBOK</strong><small>Guardián · motor nutricional</small></span>
+   </button>
+   <button type="button" id="boobokEventsToggle" class="boobok-event-toggle" hidden aria-pressed="false">Mostrar intervenciones BOOBOK</button>
+ </div><div id="schoolMapLegend" class="school-map-legend" hidden><strong>Escuelas activadas</strong><span><i class="school-key school-key-extracted"></i>Extraídas</span><span><i class="school-key school-key-tableau"></i>Pendientes</span><span><i class="school-key school-key-sep"></i>SEP</span></div><div class="legend"><div class="between"><b id="legendTitle">Obesidad</b><small id="legendNote">Escuelas con datos suficientes</small></div><div id="legendBins" class="legend-bins"></div><p>Gris = sin dato válido, nunca ausencia de casos. Porcentajes del subconjunto analizado.</p></div><div id="geoStatus" class="geo-status">Límites municipales · Fuente cartográfica derivada de INEGI</div></section>
  <section id="tablePanel" class="table-panel" hidden><div class="table-head"><h3>Comparación territorial</h3><p>Selecciona una fila para visualizar su municipio o distrito en el mapa.</p><button id="exportTable" type="button">Exportar tabla pública CSV</button></div><div class="table-wrap"><table><thead><tr><th>Territorio</th><th>SEP</th><th>En Tableau</th><th>Extraídas</th><th>% extracción</th><th>Registrados</th><th>Evaluados</th><th>% evaluados</th><th>IMC clasificados</th><th>Peso bajo</th><th>Normal</th><th>Sobrepeso</th><th>Obesidad</th></tr></thead><tbody id="tableBody"></tbody></table></div><p class="table-foot">La información de salud se suprime en municipios con menos de cinco CCT analizadas, menos de cincuenta clasificaciones o alguna categoría inferior a once registros. No calcular tasas estatales o municipales representativas a partir del corte.</p></section>
  <section id="populationPanel" class="who-panel" hidden><div class="who-head"><span class="eyebrow">DEMOGRAFÍA / PROYECCIONES CONAPO 2015–2030</span><h3>Curva poblacional de menores de cinco años</h3><p id="popSummary">Selecciona un territorio para visualizar su curva CONAPO, separada de los datos de evaluación IMSS.</p></div><div class="demog-kpis" id="popKpis"></div><div class="census-compare"><strong>Contraste de fuentes, Sonora 2020</strong><p><b>INEGI Censo 2020:</b> 218,345 residentes de 0–4 años (110,604 niños y 107,741 niñas). <b>CONAPO proyección 2020:</b> 251,000. Son fuentes y metodologías distintas; no debe sustituirse la cifra censal por la proyección ni asignarse la proyección 2026 a AGEB.</p><a href="https://www.inegi.org.mx/app/tabulados/interactivos/?pxq=Poblacion_Poblacion_01_e60cd8cf-927f-4b94-823e-972457a12d4b" target="_blank" rel="noopener">Consultar tabulado INEGI</a></div><div class="chart-shell"><svg id="populationChart" role="img" aria-label="Serie 2015 a 2030 de población residente de cero a cuatro años" viewBox="0 0 820 305"></svg></div><div class="table-wrap"><table class="population-table"><thead><tr><th>Año</th><th>Niñas 0–4</th><th>Niños 0–4</th><th>Total 0–4</th><th>Total residentes</th><th>% 0–4</th></tr></thead><tbody id="populationTable"></tbody></table></div><div class="who-callout">CONAPO: proyección de población residente 2015–2030. INEGI: conteo censal 2020 por municipio y AGEB urbana, con valores suprimidos ocultos. No es una proyección 2026 por AGEB. Ninguna cifra CONAPO es una medición de niños evaluados por IMSS. El indicador de cobertura escolar utiliza la matrícula reportada por las CCT extraídas, no la población 0–4 residente.</div></section>
  <section id="whoPanel" class="who-panel" hidden><div class="who-head"><span class="eyebrow">REFERENCIA ANTROPOMÉTRICA</span><h3>Curvas de crecimiento de la OMS</h3><p>Las curvas aportadas cubren estándares de crecimiento infantil y referencias hasta los 19 años, pero el ZIP contiene <b>categorías IMC por edad y sexo</b>, no los pesos y tallas de cada menor. No se han asignado percentiles ni puntuaciones Z individuales.</p></div><div class="who-grid"><article><small>0 a 59 meses</small><h4>Estándares OMS 2006</h4><p>Peso para longitud/talla, talla para edad e IMC para edad. Para evaluar emaciación y grados de desnutrición es necesario peso, longitud/talla, sexo y edad exacta.</p><a href="https://www.who.int/tools/child-growth-standards" target="_blank" rel="noopener">Consultar estándares oficiales OMS</a></article><article><small>5 a 19 años</small><h4>Referencia OMS 2007</h4><p>IMC para la edad por sexo. Delgadez: Z &lt; −2; delgadez severa: Z &lt; −3; sobrepeso: Z &gt; +1; obesidad: Z &gt; +2.</p><a href="https://www.who.int/tools/growth-reference-data-for-5to19-years/indicators/bmi-for-age" target="_blank" rel="noopener">Consultar curvas oficiales 5–19 años</a></article></div><div class="who-callout"><strong>Lectura contextual:</strong> el archivo IMSS incluye edades de 4 a 16 años. Se identificaron 26 evaluados de cuatro años; ya existen denominadores censales de residentes 0–4 para municipios y AGEB urbanas divulgables, pero no corresponden al universo del operativo escolar IMSS y no deben usarse para su cobertura. Tampoco hay información para individualizar a cada niño en una curva. La categoría «Peso Bajo» del tablero NO identifica por sí misma desnutrición moderada o severa.</div></section>
@@ -68,21 +75,31 @@
 </div>
 <dialog id="boobokIdentityDialog" class="boobok-dialog" aria-labelledby="boobokDialogTitle">
   <div class="boobok-modal-head">
-    <div><span class="boobok-overline">IDENTIDAD OFICIAL</span><h2 id="boobokDialogTitle">BOOBOK <small>· ALLERE ALUMNAE</small></h2></div>
-    <button type="button" class="boobok-close" id="closeBoobokIdentity" aria-label="Cerrar identidad BOOBOK">✕</button>
+    <div><span class="boobok-overline">GUARDIÁN VISUAL · MOTOR DE VIGILANCIA NUTRICIONAL</span><h2 id="boobokDialogTitle">BOOBOK <small>en ALLERE ALUMNAE</small></h2></div>
+    <button type="button" class="boobok-close" id="closeBoobokIdentity" aria-label="Cerrar ficha de BOOBOK">✕</button>
   </div>
-  <img src="./assets/boobok_identidad.webp" class="boobok-full-art" alt="Imagen de identidad BOOBOK: sapo guardián y seis funciones Búsqueda activa, Observación del crecimiento, Orientación nutricional, Bienestar infantil, Oportunidad de intervención y Kárdex de seguimiento. Lema: Cada infancia cuenta, cada crecimiento importa." width="1671" height="941" loading="lazy">
-  <div class="boobok-modal-copy">
-    <p><strong>El guardián de la infancia.</strong> BOOBOK detecta riesgos nutricionales, organiza alertas, orienta intervenciones y apoya el seguimiento.</p>
-    <div class="boobok-acronym" aria-label="Significado del acrónimo BOOBOK">
-      <div><b>B</b><span>Búsqueda activa</span></div>
-      <div><b>O</b><span>Observación del crecimiento</span></div>
-      <div><b>O</b><span>Orientación nutricional</span></div>
-      <div><b>B</b><span>Bienestar infantil</span></div>
-      <div><b>O</b><span>Oportunidad de intervención</span></div>
-      <div><b>K</b><span>Kárdex de seguimiento</span></div>
+  <div class="boobok-ficha-layout">
+    <div class="boobok-ficha-visual">
+      <img src="./assets/boobok/BOOBOK_ficha_vertical.webp" class="boobok-ficha-art" alt="Ficha vertical de BOOBOK con el sapo guardián, flor rosa, vegetación turquesa y emblema. Texto: Motor de vigilancia nutricional, BOOBOK, ALLERE ALUMNAE" width="1086" height="1448" loading="lazy">
     </div>
-    <p class="boobok-motto">BOOBOK: Cada infancia cuenta. Cada crecimiento importa.</p>
+    <div class="boobok-modal-copy">
+      <p><strong>ALLERE ALUMNAE es la plataforma principal.</strong> BOOBOK es su guardián visual y el nombre del motor que acompaña la búsqueda, observación, orientación, intervención y seguimiento nutricional infantil.</p>
+      <p class="boobok-acronym-label">Acrónimo funcional propuesto · pendiente de aprobación final</p>
+      <div class="boobok-acronym" aria-label="Propuesta de acrónimo funcional de BOOBOK">
+        <div><b>B</b><span>Búsqueda activa</span></div>
+        <div><b>O</b><span>Observación del crecimiento</span></div>
+        <div><b>O</b><span>Orientación nutricional</span></div>
+        <div><b>B</b><span>Bienestar infantil</span></div>
+        <div><b>O</b><span>Oportunidad de intervención</span></div>
+        <div><b>K</b><span>Kárdex de seguimiento</span></div>
+      </div>
+      <div class="boobok-pin-guide">
+        <img src="./assets/boobok/BOOBOK_pin_48x72.png" width="36" height="54" alt="Marcador de BOOBOK para Leaflet">
+        <div><strong>Marcador del motor BOOBOK</strong><p>Reservado para eventos e intervenciones públicos, validados y georreferenciados. No sustituye los marcadores de las escuelas ni representa casos individuales. Sin ubicaciones activas inventadas.</p></div>
+      </div>
+      <p class="boobok-motto">BOOBOK: Cada infancia cuenta. Cada crecimiento importa.</p>
+      <p class="boobok-identity-note">Ilustración contemporánea inspirada en una figura de la tradición yoeme-yaqui. El acrónimo no es traducción lingüística.</p>
+    </div>
   </div>
 </dialog>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script><script src="./atlas.js"></script></body></html>
