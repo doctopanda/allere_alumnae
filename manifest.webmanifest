@@ -1,0 +1,32 @@
+{
+  "name": "ALLERE ALUMNAE · BOOBOK",
+  "short_name": "ALLERE",
+  "description": "Visor nutricional escolar y mapa territorial de Sonora.",
+  "id": "./movil.html",
+  "start_url": "./movil.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "lang": "es-MX",
+  "background_color": "#f5faf6",
+  "theme_color": "#0a5953",
+  "icons": [
+    {
+      "src": "./assets/boobok/BOOBOK_avatar_128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./assets/boobok/BOOBOK_avatar_256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": [
+    "medical",
+    "education",
+    "utilities"
+  ]
+}
