@@ -99,7 +99,7 @@
     <main class="main">
       <div class="topbar">
         <div class="topbar-titles"><span class="crumb">ALLERE ALUMNAE / CARTOGRAFÍA</span><h2>Sonora, bajo la lupa.</h2></div>
-        <div class="tabs" role="group" aria-label="Vista"><button id="tabMap" class="tab active" aria-pressed="true">Mapa escolar</button><button id="tabHealth" class="tab" aria-pressed="false">Panorama IMC parcial</button></div>
+        <div class="tabs" role="group" aria-label="Vista"><button id="tabMap" class="tab active" aria-pressed="true">Mapa escolar</button><button id="tabHealth" class="tab" aria-pressed="false">Panorama IMC · 1,393 CCT</button><button id="tabWHO" class="tab" aria-pressed="false">Curvas OMS</button></div>
       </div>
       <section id="mapView" class="map-panel">
         <div id="map" aria-label="Mapa interactivo de escuelas de Sonora"></div>
@@ -133,6 +133,14 @@
           </div>
         </div>
         <div class="warning-block"><strong>Interpretación obligatoria</strong><p>Se muestran conteos de un subconjunto no aleatorio. No se calculan tasas estatales ni comparaciones de desempeño entre escuelas. Se suprimen subgrupos municipales menores de once.</p></div>
+      </section>
+      <section id="whoView" class="health-panel" hidden>
+        <div class="health-head"><span class="overline">REFERENCIA ANTROPOMÉTRICA</span><h3>Curvas OMS: del territorio al crecimiento</h3>
+          <p>El PDF de referencia proporcionado contiene curvas 0–5 y 5–19 años (IMC para la edad en sus páginas 10–11). El ZIP IMSS sólo incluye categorías agregadas y grupos de edad/sexo, no peso, talla, edad en meses o IMC individual. Por ello, no se calculan percentiles ni grados individuales de desnutrición.</p></div>
+        <div class="who-reference-grid">
+          <article><span class="overline">0 A 59 MESES</span><h3>Patrones OMS 2006</h3><p>Para valoración individual se requiere edad exacta, sexo y medidas antropométricas. En menores de cinco años se emplean los estándares de crecimiento OMS según indicador.</p><a target="_blank" rel="noopener" href="https://www.who.int/tools/child-growth-standards">Consultar curvas oficiales 0–5 años</a></article>
+          <article><span class="overline">5 A 19 AÑOS</span><h3>Referencia OMS 2007</h3><p>IMC para la edad. Delgadez: Z &lt; −2; delgadez severa: Z &lt; −3; sobrepeso: Z &gt; +1; obesidad: Z &gt; +2. La categoría «Peso Bajo» del Tableau no demuestra por sí sola un grado de desnutrición.</p><a target="_blank" rel="noopener" href="https://www.who.int/tools/growth-reference-data-for-5to19-years/indicators/bmi-for-age">Consultar curvas IMC por edad y sexo</a></article>
+        </div><div class="warning-block"><strong>Menores de cinco años</strong><p>El corte muestra 26 menores evaluados de cuatro años. Los porcentajes de cobertura poblacional 0–4 por distrito, municipio o AGEB no pueden calcularse sin denominadores demográficos oficiales de la misma zona y fecha. No debemos dividir evaluados de 2026 entre la población censal de 2020 sin advertir diferencias de población, edad y cobertura.</p></div>
       </section>
       <footer class="footer"><span>ALLERE ALUMNAE · Observatorio escolar</span><span>Fuente: 10 hojas Tableau confirmadas + SEP · Corte 28 OCT 2026</span></footer>
     </main>
