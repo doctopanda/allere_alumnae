@@ -1,6 +1,10 @@
 name: Censo INEGI 2020 · AGEB 0–4 Sonora
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - "scripts/inegi_ageb_2020.py"
+      - ".github/workflows/inegi_ageb_2020.yml"
 permissions:
   contents: write
 jobs:
@@ -12,11 +16,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Descargar y auditar información censal oficial
-        run: python scripts/inegi_ageb_2020.py
-      - name: Publicar únicamente agregados INEGI 2020
+      - name: Descargar y auditar ZIP oficial INEGI Sonora 2020
+        run: python -u scripts/inegi_ageb_2020.py
+      - name: Verificar volumen de datos censales e integridad
+        run: |
+          python - <<'PY'
+          import json, pathlib, sys
+          p=pathlib.Path('data/inegi_ageb_2020_0_4.json')
+          j=json.loads(p.read_text(encoding='utf8'))
+          n=len(j['registros'])
+          total=sum(v['p_0a4'] for v in j['registros'].values())
+          assert n>=500 and 30000<total<400000,(n,total)
+          print(f'Validación final: {n} AGEB urbanas publicables; {total} residentes de 0-4 en esas AGEB (Censo 2020).')
+          PY
+      - name: Publicar únicamente agregados censales 2020
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/inegi_ageb_2020_0_4.json
-          git diff --cached --quiet || (git commit -m "Publicar población de 0–4 INEGI 2020 por AGEB urbana de Sonora" && git push)
+          git diff --cached --quiet || (git commit -m "Publicar 0–4 INEGI 2020 por AGEB urbana de Sonora" && git push)
