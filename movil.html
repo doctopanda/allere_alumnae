@@ -84,14 +84,18 @@
        <p>Ordenados por avance de extracción de CCT presentes en Tableau. Esta comparación no mide representatividad del operativo.</p>
        <div id="districtRows" class="territories"></div>
      </article>
-     <div class="actions"><button class="action" data-go="map">Ver territorio en el mapa</button><a class="action alt" style="text-align:center;text-decoration:none;display:grid;place-items:center" href="./plataforma.html" target="_blank" rel="noopener">Tablero completo ↗</a></div>
+     <div class="actions"><button class="action" data-go="map">Ver territorio en el mapa</button><button class="action alt" type="button" data-go="full">Visor integral ↗</button></div>
      <p class="footer-notice">Las categorías pequeñas están suprimidas conforme a las reglas de publicación. Nunca interpretar «S/D» como cero.</p>
+   </section>
+   <section class="view view-map" id="view-full" hidden aria-label="Visor integral interactivo">
+     <div id="fullSlot" class="map-empty"><img src="./assets/boobok/BOOBOK_avatar_128.png" alt=""><strong>Visor integral</strong><p>Gráficos interactivos, panorama epidemiológico y filtros municipales en la plataforma completa.</p></div>
    </section>
  </main>
  <nav class="tabbar" aria-label="Navegación de la webapp">
    <button type="button" data-tab="home" class="active" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></button>
    <button type="button" data-tab="map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zM9 3v16m6-14v16"/></svg><span>Mapa</span></button>
    <button type="button" data-tab="dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V10h4v11M10 21V3h4v18m2 0v-8h4v8M2 21h20"/></svg><span>Tablero</span></button>
+   <button type="button" data-tab="full"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h14v16H6zM3 8v13M9 8h8M9 12h8M9 16h5"/></svg><span>Visor</span></button>
  </nav>
 </div>
 <dialog id="detailSheet" class="sheet" aria-labelledby="sheetTitle">
