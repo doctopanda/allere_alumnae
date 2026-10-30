@@ -13,6 +13,7 @@ const metricNames={'Peso Bajo':'Peso bajo · categoría Tableau',Normal:'Peso no
 let conapo=null,agebCensus=null, data=null,geo=null,schoolData=null,tableauSchoolNames=new Map(),map=null,geoLayer=null,schoolLayer=null,agebLayer=null,agebItems=[],agebSelected=null,agebSerial=0;
 let state={level:'municipio',metric:'Obesidad',district:'',municipality:'',tab:'map',showSchools:false,schoolFilter:'TODAS',schoolSearch:'',popYear:2026};
 let byNormDistrict=new Map();
+let boobokMarkerIcon=null,boobokEventLayer=null;
 let schoolLayerCacheKey='',schoolCanvas=null,schoolSearchTimer=null;
 const agebRequestCache=new Map();
 function numberBox(title,val,detail=''){return '<div class="info-card"><small>'+sanitize(title)+'</small><b>'+fmt(val)+'</b><span>'+sanitize(detail)+'</span></div>';}
@@ -74,9 +75,62 @@ function applyMap(){
  if(geoLayer){geoLayer.eachLayer(l=>{l.setStyle(styleGeo(l.feature));l.unbindTooltip();l.bindTooltip(popupSummary(l.feature),{sticky:true})});}
  refreshSchoolLayer();if(agebLayer)agebLayer.eachLayer(l=>l.setStyle(styleAgeB(l.feature)));drawLegend();renderTable();renderTitle();syncMetricPills();
 }
+
+/* BOOBOK: eventos públicos previamente validados. Nunca crear ubicaciones ficticias,
+   ni sustituir con su pin los puntos escolares del padrón SEP. */
+async function loadBoobokPublicEvents(){
+ const toggle=$('boobokEventsToggle');
+ if(!map||!window.L||!toggle||!boobokMarkerIcon)return;
+ toggle.hidden=true;
+ try{
+  const resp=await fetch('./data/boobok_eventos_publicos.json',{cache:'no-cache'});
+  if(!resp.ok)return;
+  const document=await resp.json();
+  if(!Array.isArray(document.eventos))return;
+  const allowedTypes=new Set(['PUNTO_ATENCION','JORNADA','INTERVENCION']);
+  const layer=L.layerGroup(),markers=[];
+  for(const entry of document.eventos){
+   if(entry?.publico_autorizado!==true||!allowedTypes.has(entry.tipo))continue;
+   const lat=Number(entry.lat),lng=Number(entry.lng);
+   if(!Number.isFinite(lat)||!Number.isFinite(lng)||lat<26||lat>33||lng< -116||lng> -108)continue;
+   if(typeof entry.nombre!=='string'||!entry.nombre.trim()||entry.nombre.length>130)continue;
+   if(typeof entry.descripcion!=='string'||entry.descripcion.length>500)continue;
+   const types={PUNTO_ATENCION:'Punto de atención',JORNADA:'Jornada',INTERVENCION:'Intervención'};
+   const popup='<div class="boobok-event-popup"><strong>BOOBOK · '+sanitize(types[entry.tipo])+
+     '</strong><h3>'+sanitize(entry.nombre)+'</h3><p>'+sanitize(entry.descripcion)+
+     '</p><small>Ubicación operativa pública y autorizada. No corresponde a la residencia de menores.</small></div>';
+   const marker=L.marker([lat,lng],{icon:boobokMarkerIcon,title:'BOOBOK · '+entry.nombre});
+   marker.bindPopup(popup).addTo(layer);
+   markers.push(marker);
+  }
+  if(!markers.length)return;
+  boobokEventLayer=layer;
+  toggle.hidden=false;
+  toggle.textContent='Mostrar '+markers.length+' intervención'+(markers.length===1?'':'es')+' BOOBOK';
+  toggle.setAttribute('aria-pressed','false');
+  toggle.addEventListener('click',()=>{
+    if(!boobokEventLayer)return;
+    const next=!map.hasLayer(boobokEventLayer);
+    if(next)map.addLayer(boobokEventLayer);
+    else map.removeLayer(boobokEventLayer);
+    toggle.setAttribute('aria-pressed',String(next));
+    toggle.textContent=(next?'Ocultar':'Mostrar')+' '+markers.length+
+      ' intervención'+(markers.length===1?'':'es')+' BOOBOK';
+  });
+ }catch(err){
+  console.info('BOOBOK: sin eventos públicos cargados o recurso no disponible.',err);
+ }
+}
+
 function initMap(){
  if(!window.L){$('map').textContent='No se pudo cargar el mapa. Revisa la conexión de red.';return;}
  map=L.map('map',{preferCanvas:true,zoomControl:false}).setView([29.15,-110.7],7);
+ boobokMarkerIcon=L.icon({
+   iconUrl:'./assets/boobok/BOOBOK_pin_48x72.png',
+   iconSize:[48,72],
+   iconAnchor:[24,70],
+   popupAnchor:[0,-65]
+ });
  L.control.zoom({position:'topright'}).addTo(map);
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:18,attribution:'© OpenStreetMap contributors'}).addTo(map);
  geoLayer=L.geoJSON(geo,{style:styleGeo,onEachFeature:(f,l)=>{
@@ -397,6 +451,7 @@ async function main(){
   $('schoolFilter').value='TODAS';state.schoolFilter='TODAS';
   $('schoolSearch').value='';state.schoolSearch='';
   initMap();applyMap();renderSidebar();
+  loadBoobokPublicEvents();
   $('nivel').addEventListener('change',updateLevel);
   $('metrica').addEventListener('change',()=>{state.metric=$('metrica').value;applyMap();renderSidebar()});
   $('populationYear').addEventListener('input',()=>{state.popYear=Number($('populationYear').value);$('populationYearVal').textContent=state.popYear;applyMap();renderSidebar();if(state.tab==='population')renderPopulationTab();});
@@ -418,21 +473,28 @@ async function main(){
  }catch(e){console.error(e);$('geoStatus').textContent='Error de carga: '+e.message;$('map').innerHTML='<p style="padding:30px">No se pudo cargar la versión nueva. Consulta la consola o recarga el sitio.</p>';}
 }
 document.addEventListener('DOMContentLoaded',main);
-/* BOOBOK: visor de identidad independiente de las consultas y filtros del atlas. */
+/* La identidad BOOBOK es independiente de las consultas y filtros del atlas. */
 document.addEventListener('DOMContentLoaded',()=>{
-  const modal=document.getElementById('boobokIdentityDialog');
-  const open=document.getElementById('showBoobokIdentity');
-  const close=document.getElementById('closeBoobokIdentity');
-  if(!modal||!open||!close)return;
-  open.addEventListener('click',()=>{
-    if(typeof modal.showModal==='function')modal.showModal();
-    else modal.setAttribute('open','');
-  });
-  close.addEventListener('click',()=>{if(typeof modal.close==='function')modal.close();else modal.removeAttribute('open')});
-  modal.addEventListener('click',event=>{
-    if(event.target===modal){
-      if(typeof modal.close==='function')modal.close();
-      else modal.removeAttribute('open');
-    }
-  });
+ const modal=$('boobokIdentityDialog');
+ const sidebarButton=$('showBoobokIdentity');
+ const mapButton=$('boobokMapBadge');
+ const close=$('closeBoobokIdentity');
+ if(!modal||!close)return;
+ const open=()=>{
+  if(typeof modal.showModal==='function')modal.showModal();
+  else modal.setAttribute('open','');
+ };
+ for(const button of [sidebarButton,mapButton]){
+  if(button)button.addEventListener('click',open);
+ }
+ close.addEventListener('click',()=>{
+  if(typeof modal.close==='function')modal.close();
+  else modal.removeAttribute('open');
+ });
+ modal.addEventListener('click',event=>{
+  if(event.target===modal){
+   if(typeof modal.close==='function')modal.close();
+   else modal.removeAttribute('open');
+  }
+ });
 });
