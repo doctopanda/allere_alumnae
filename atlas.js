@@ -107,8 +107,10 @@ function schoolAreaRows(){
  let points=layerPoints();
  if(state.municipality)points=points.filter(x=>x[1]===norm(state.municipality));
  else if(state.district)points=points.filter(x=>byNormDistrict.get(x[1])===state.district);
- if(state.level==='ageb'&&agebSelected?._geometry)
+ if(state.level==='ageb'&&agebSelected){
+  if(!agebSelected._geometry)return [];
   points=points.filter(x=>x[2]!=null&&x[3]!=null&&pInGeom([x[3],x[2]],agebSelected._geometry));
+ }
  return points;
 }
 function schoolVisibleRows(){
@@ -119,6 +121,7 @@ function schoolVisibleRows(){
 }
 function refreshSchoolCounts(){
  if(!$('schoolCounts')||!schoolData)return;
+ if(state.level==='ageb'&&agebSelected&&!agebSelected._geometry){$('schoolCounts').textContent='No es posible ubicar escuelas en esta AGEB sin su polígono verificado. No equivale a cero escuelas.';return;}
  const pts=schoolAreaRows(),cnt={EXTRAIDA:0,TABLEAU:0,SEP:0};
  for(const p of pts){if(Object.hasOwn(cnt,p[4]))cnt[p[4]]++;}
  const current=schoolVisibleRows();
@@ -311,6 +314,7 @@ function styleAgeB(f){
 function agebCounts(feature,pts){const stat={cct_sep:0,cct_tableau:0,cct_extraidas:0,cct_con_evaluados:null,menores_registrados:null,menores_evaluados:null,pct_menores_evaluados:null,imc_clasificados:null,nutricion_publicable:false,nutricion:{},menores_5_evaluados:null,rango_edad_5_9:null,rango_edad_10_16:null};
  for(const row of pts){const point=[row[3],row[2]];if(pInGeom(point,feature.geometry)){stat.cct_sep++;if(row[4]==='EXTRAIDA'){stat.cct_tableau++;stat.cct_extraidas++}else if(row[4]==='TABLEAU')stat.cct_tableau++}}
  stat.pct_extraidas_en_tableau=stat.cct_tableau?stat.cct_extraidas/stat.cct_tableau*100:null;
+ stat._geometry=feature.geometry;
  const census=agebCensus?.registros?.[agebCode(feature)];stat.poblacion_0_4_censo_2020=census?.p_0a4??null;stat.poblacion_total_censo_2020=census?.pobtot??null;stat.pct_0_4_censo_2020=census?.pct_0_4??null;stat.pct_evaluadas_en_tableau=null;stat.pct_tableau_en_sep=stat.cct_sep?stat.cct_tableau/stat.cct_sep*100:null;return stat;}
 async function reloadAgebs(){clearAgebs();if(state.level!=='ageb')return;if(!state.municipality){$('geoStatus').textContent='AGEB: elige primero un municipio';$('filterNotice').textContent='Para calcular cobertura a escala AGEB, selecciona un municipio y espera las geometrías del INEGI. Las tasas de IMC por AGEB no están disponibles.';return;}
  const thisRun=agebSerial,mun=state.municipality;
