@@ -477,14 +477,14 @@ document.addEventListener('DOMContentLoaded',main);
 document.addEventListener('DOMContentLoaded',()=>{
  const modal=$('boobokIdentityDialog');
  const sidebarButton=$('showBoobokIdentity');
- const mapButton=$('boobokMapBadge');
+
  const close=$('closeBoobokIdentity');
  if(!modal||!close)return;
  const open=()=>{
   if(typeof modal.showModal==='function')modal.showModal();
   else modal.setAttribute('open','');
  };
- for(const button of [sidebarButton,mapButton]){
+ for(const button of [sidebarButton]){
   if(button)button.addEventListener('click',open);
  }
  close.addEventListener('click',()=>{
