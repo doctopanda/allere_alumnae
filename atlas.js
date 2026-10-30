@@ -11,8 +11,9 @@ const thresholds={under5:[500,2000,6000,20000],under5_share:[5,6,7,8],"Peso Bajo
 const healthCategories=['Peso Bajo','Normal','Sobrepeso','Obesidad'];
 const metricNames={'Peso Bajo':'Peso bajo · categoría Tableau',Normal:'Peso normal · categoría Tableau',Sobrepeso:'Sobrepeso · categoría Tableau',Obesidad:'Obesidad · categoría Tableau',cct_extraidas:'Escuelas extraídas / disponibles en Tableau',cct_evaluadas:'Escuelas con evaluaciones / disponibles en Tableau',pct_menores_evaluados:'Menores evaluados / menores registrados',pct_tableau_en_sep:'Escuelas visibles en Tableau / padrón SEP',under5:'Población residente de 0–4 años · CONAPO',under5_share:'Población de 0–4 años como % de residentes · CONAPO'};
 let conapo=null,agebCensus=null, data=null,geo=null,schoolData=null,tableauSchoolNames=new Map(),map=null,geoLayer=null,schoolLayer=null,agebLayer=null,agebItems=[],agebSelected=null,agebSerial=0;
-let state={level:'municipio',metric:'Obesidad',district:'',municipality:'',tab:'map',showSchools:true,schoolFilter:'TODAS',popYear:2026};
+let state={level:'municipio',metric:'Obesidad',district:'',municipality:'',tab:'map',showSchools:false,schoolFilter:'TODAS',schoolSearch:'',popYear:2026};
 let byNormDistrict=new Map();
+let schoolLayerCacheKey='',schoolCanvas=null,schoolSearchTimer=null;
 const agebRequestCache=new Map();
 function numberBox(title,val,detail=''){return '<div class="info-card"><small>'+sanitize(title)+'</small><b>'+fmt(val)+'</b><span>'+sanitize(detail)+'</span></div>';}
 function percentBox(title,val,detail=''){return '<div class="info-card"><small>'+sanitize(title)+'</small><b>'+pct(val)+'</b><span>'+sanitize(detail)+'</span></div>';}
@@ -71,7 +72,7 @@ function styleGeo(f){let val=metricValue(recordForGeo(f));const name=nameForGeo(
 function popupSummary(f){const name=nameForGeo(f),rec=recordForGeo(f),v=metricValue(rec);return '<b>'+sanitize(state.level==='distrito'?(rec?.nombre||'Distrito'):name)+'</b><div>'+sanitize(metricNames[state.metric])+'<br><strong>'+(v==null?'Sin dato válido':(state.metric==='under5'?fmt(v):pct(v)))+'</strong></div><small>Clic para abrir el territorio en el panel lateral.</small>';}
 function applyMap(){
  if(geoLayer){geoLayer.eachLayer(l=>{l.setStyle(styleGeo(l.feature));l.unbindTooltip();l.bindTooltip(popupSummary(l.feature),{sticky:true})});}
- refreshSchoolLayer();if(agebLayer)agebLayer.eachLayer(l=>l.setStyle(styleAgeB(l.feature)));drawLegend();renderTable();renderTitle();
+ refreshSchoolLayer();if(agebLayer)agebLayer.eachLayer(l=>l.setStyle(styleAgeB(l.feature)));drawLegend();renderTable();renderTitle();syncMetricPills();
 }
 function initMap(){
  if(!window.L){$('map').textContent='No se pudo cargar el mapa. Revisa la conexión de red.';return;}
@@ -111,8 +112,10 @@ function schoolAreaRows(){
  return points;
 }
 function schoolVisibleRows(){
- const points=schoolAreaRows();
- return state.schoolFilter==='TODAS'?points:points.filter(x=>x[4]===state.schoolFilter);
+ const pts=schoolAreaRows();
+ const group=state.schoolFilter==='TODAS'?pts:pts.filter(x=>x[4]===state.schoolFilter);
+ const q=state.schoolSearch.trim().toUpperCase();
+ return q?group.filter(x=>String(x[0]||'').toUpperCase().includes(q)):group;
 }
 function refreshSchoolCounts(){
  if(!$('schoolCounts')||!schoolData)return;
@@ -130,32 +133,86 @@ function refreshSchoolCounts(){
   (state.showSchools?'':' · capa apagada');
 }
 function refreshSchoolLayer(){
+ const controls=$('schoolControls'),legend=$('schoolMapLegend');
+ if(controls)controls.hidden=!state.showSchools;
+ if(legend)legend.hidden=!state.showSchools;
+ const hint=$('schoolToggleHint');
+ if(hint)hint.textContent=state.showSchools?'Puntos activados · puedes filtrar por estado o CCT.':'Ocultas al iniciar. Actívalas para explorar las CCT.';
  if(!map||!schoolData)return;
- if(schoolLayer){map.removeLayer(schoolLayer);schoolLayer=null;}
  refreshSchoolCounts();
- if(!state.showSchools)return;
+ if(!state.showSchools){
+   if(schoolLayer){map.removeLayer(schoolLayer);schoolLayer=null;}
+   schoolLayerCacheKey='';
+   return;
+ }
+ const key=[state.schoolFilter,state.schoolSearch,norm(state.municipality),state.district].join('|');
+ if(key===schoolLayerCacheKey && schoolLayer && map.hasLayer(schoolLayer))return;
+ if(schoolLayer){map.removeLayer(schoolLayer);schoolLayer=null;}
  schoolLayer=L.layerGroup();
  const points=schoolVisibleRows().filter(x=>x[2]!=null&&x[3]!=null);
- const canvas=L.canvas({padding:.25});
+ if(!schoolCanvas)schoolCanvas=L.canvas({padding:.35});
  for(const row of points){
-  const color={EXTRAIDA:'#218569',TABLEAU:'#dca45b',SEP:'#81919b'}[row[4]]||'#87918a';
-  const msg=row[4]==='EXTRAIDA'?'Datos escolares agregados extraídos del tablero':
-   row[4]==='TABLEAU'?'CCT en filtro Tableau, extracción pendiente':
-   'CCT en padrón SEP; no observada en la lista recuperada de Tableau';
-  L.circleMarker([row[2],row[3]],{
-   renderer:canvas,radius:row[4]==='EXTRAIDA'?4:3.1,weight:1.1,color:'#ffffff',
-   fillColor:color,fillOpacity:.93
-  }).bindPopup('<b>CCT '+sanitize(row[0])+'</b><br>'+
-     '<b>'+sanitize(row[1])+'</b><br>'+sanitize(msg)+
-     '<br><small>La extracción no implica que todos los niños hayan sido evaluados. No se publican datos clínicos por escuela.</small>')
-   .addTo(schoolLayer);
+   const color={EXTRAIDA:'#258571',TABLEAU:'#e3a24f',SEP:'#8292a1'}[row[4]]||'#87918a';
+   const msg=row[4]==='EXTRAIDA'?'CCT con consulta y datos extraídos del IMSS':
+     row[4]==='TABLEAU'?'CCT visible en el filtro Tableau, pendiente de extracción':
+     'CCT del padrón SEP, no observada en el filtro Tableau';
+   L.circleMarker([row[2],row[3]],{
+     renderer:schoolCanvas,radius:row[4]==='EXTRAIDA'?4.1:3.25,
+     weight:1.1,color:'#ffffff',fillColor:color,fillOpacity:.94
+   }).bindPopup('<div class="school-popup"><span class="school-popup-badge">'+sanitize(row[4])+'</span>'+
+     '<h3>CCT '+sanitize(row[0])+'</h3><p>'+sanitize(msg)+'</p>'+
+     '<small>Ubicación SEP referencial. Sin datos clínicos individuales.</small></div>').addTo(schoolLayer);
  }
  schoolLayer.addTo(map);
+ schoolLayerCacheKey=key;
 }
-
+function syncMetricPills(){
+ const pills=document.querySelectorAll('[data-metric]');
+ for(const btn of pills){
+   const on=btn.dataset.metric===state.metric;
+   btn.classList.toggle('active',on);
+   btn.setAttribute('aria-pressed',String(on));
+ }
+}
+function renderTerritoryRibbon(r,isAgeB){
+ const title=isAgeB?'AGEB '+(agebSelected?.nombre||''):r?.nombre||'Sonora';
+ $('ribbonArea').textContent=title;
+ $('ribbonStatus').textContent=isAgeB?'Localización de planteles · sin tasas IMC por AGEB':
+   'Indicadores del corte IMSS · 28 oct 2026';
+ $('ribbonCct').textContent=fmt(r?.cct_extraidas)+' / '+fmt(r?.cct_tableau);
+ $('ribbonEvaluated').textContent=fmt(r?.menores_evaluados)+' / '+fmt(r?.menores_registrados);
+ $('ribbonCoverage').textContent=pct(r?.pct_menores_evaluados);
+ $('territoryTypeLabel').textContent=isAgeB?'AGEB':state.municipality?'MUNICIPIO':state.district?'DISTRITO':'SONORA';
+}
+function renderNutritionalStack(r,isAgeB){
+ const stack=$('nutriStack'),insight=$('territoryInsight');
+ if(!stack||!insight)return;
+ stack.innerHTML='';
+ if(isAgeB||!r?.nutricion_publicable){
+   insight.innerHTML='<b>Lectura territorial</b><p>Las categorías IMC no están publicadas para esta unidad. <strong>Sin dato no significa cero casos.</strong> Los puntos corresponden a escuelas, no al domicilio de los niños.</p>';
+   return;
+ }
+ const categoryColors={'Peso Bajo':'#7bb7b7',Normal:'#5e9569',Sobrepeso:'#dbab62',Obesidad:'#ec889b'};
+ const accessible=[];
+ let parts='';
+ for(const k of healthCategories){
+   const z=r.nutricion?.[k],p=Number(z?.pct||0);
+   if(!(p>0))continue;
+   parts+='<span style="width:'+Math.max(0,Math.min(100,p)).toFixed(3)+'%;background:'+categoryColors[k]+'" title="'+sanitize(k)+' · '+pct(p)+'"></span>';
+   accessible.push(k+' '+pct(p));
+ }
+ if(parts){
+   stack.innerHTML='<div class="nutri-stack-track" role="img" aria-label="'+sanitize(accessible.join(', '))+'">'+parts+'</div>'+
+   '<div class="nutri-stack-labels">'+healthCategories.map(k=>'<span><i style="background:'+categoryColors[k]+'"></i>'+sanitize(k)+'</span>').join('')+'</div>';
+ }
+ insight.innerHTML='<b>Cómo leer este territorio</b><p>'+fmt(r.imc_clasificados)+
+ ' clasificaciones IMC recuperadas de '+fmt(r.cct_extraidas)+' CCT extraídas. Cobertura de evaluación: <strong>'+
+ pct(r.pct_menores_evaluados)+'</strong> entre menores registrados en esas CCT. No es prevalencia poblacional.</p>';
+}
 function renderSidebar(){
  const r=selectedRecord(),isAgeB=!!(state.level==='ageb'&&agebSelected);
  const showName=isAgeB?'AGEB '+agebSelected.nombre:(r?.nombre||'Sonora');
+ renderTerritoryRibbon(r,isAgeB);renderNutritionalStack(r,isAgeB);
  $('selName').textContent=showName;
  $('selSub').textContent=isAgeB?state.municipality+' · '+(agebSelected.tipo||'urbana/rural')+' · escuela situada, no residencia':r?.nombre==='Sonora'?'Resumen del corte de las 1,393 escuelas capturadas':r?.distrito?'Distrito de Salud '+r.distrito+' · evaluación escolar':'Datos del territorio seleccionado';
  const info=$('selectionInfo');info.innerHTML='<div class="info-grid">'+numberBox('CCT SEP',r.cct_sep,'catálogo 2026')+numberBox('CCT Tableau',r.cct_tableau,'filtro 2025–2026')+numberBox('CCT extraídas',r.cct_extraidas,'capturas verificadas')+percentBox('% extraídas',r.pct_extraidas_en_tableau,'de las CCT Tableau')+numberBox('Menores registrados',r.menores_registrados,'en CCT extraídas')+numberBox('Menores evaluados',r.menores_evaluados,'en CCT extraídas')+percentBox('% evaluados',r.pct_menores_evaluados,'de menores registrados')+numberBox('IMC clasificados',r.imc_clasificados,'tablas de peso y talla')+'</div>';
@@ -332,7 +389,10 @@ async function main(){
   for(const [k,r] of Object.entries(data.municipios))byNormDistrict.set(k,r.distrito);
   $('kpSep').textContent=fmt(data.meta.cct_sep);$('kpTab').textContent=fmt(data.meta.cct_tableau);$('kpExt').textContent=fmt(data.meta.cct_extraidas);$('kpEval').textContent=fmt(data.meta.menores_evaluados);
   $('progressPct').textContent=pct(data.meta.cct_extraidas/data.meta.cct_tableau*100);$('progressFill').style.width=(data.meta.cct_extraidas/data.meta.cct_tableau*100)+'%';
-  fillControls();initMap();applyMap();renderSidebar();
+  fillControls();$('showSchools').checked=false;state.showSchools=false;
+  $('schoolFilter').value='TODAS';state.schoolFilter='TODAS';
+  $('schoolSearch').value='';state.schoolSearch='';
+  initMap();applyMap();renderSidebar();
   $('nivel').addEventListener('change',updateLevel);
   $('metrica').addEventListener('change',()=>{state.metric=$('metrica').value;applyMap();renderSidebar()});
   $('populationYear').addEventListener('input',()=>{state.popYear=Number($('populationYear').value);$('populationYearVal').textContent=state.popYear;applyMap();renderSidebar();if(state.tab==='population')renderPopulationTab();});
@@ -340,7 +400,16 @@ async function main(){
   $('municipio').addEventListener('change',()=>{const v=$('municipio').value;if(v)selectMunicipio(v);else{state.municipality='';agebSelected=null;syncFilters();applyMap();renderSidebar();if(state.level==='ageb')reloadAgebs();else fitSelection()}});
   $('showSchools').addEventListener('change',()=>{state.showSchools=$('showSchools').checked;refreshSchoolLayer()});
   $('schoolFilter').addEventListener('change',()=>{state.schoolFilter=$('schoolFilter').value;refreshSchoolLayer()});
-  $('reset').addEventListener('click',()=>{state.district='';state.municipality='';state.level='municipio';state.metric='Obesidad';$('nivel').value=state.level;$('metrica').value=state.metric;$('showSchools').checked=true;state.showSchools=true;$('schoolFilter').value='TODAS';state.schoolFilter='TODAS';syncFilters();clearAgebs();applyMap();fitSelection();renderSidebar()});
+  $('schoolSearch').addEventListener('input',()=>{clearTimeout(schoolSearchTimer);schoolSearchTimer=setTimeout(()=>{state.schoolSearch=$('schoolSearch').value.trim();refreshSchoolLayer()},180)});
+  for(const chip of document.querySelectorAll('[data-metric]'))chip.addEventListener('click',()=>{state.metric=chip.dataset.metric;$('metrica').value=state.metric;applyMap();renderSidebar();if(state.tab!=='map')changeTab('map')});
+  $('reset').addEventListener('click',()=>{
+    state.district='';state.municipality='';state.level='municipio';state.metric='Obesidad';
+    $('nivel').value=state.level;$('metrica').value=state.metric;
+    $('showSchools').checked=false;state.showSchools=false;
+    $('schoolFilter').value='TODAS';state.schoolFilter='TODAS';
+    $('schoolSearch').value='';state.schoolSearch='';
+    syncFilters();clearAgebs();applyMap();fitSelection();renderSidebar();
+  });
   $('tabMap').addEventListener('click',()=>changeTab('map'));$('tabTable').addEventListener('click',()=>changeTab('table'));$('tabWHO').addEventListener('click',()=>changeTab('who'));$('tabPopulation').addEventListener('click',()=>changeTab('population'));$('exportTable').addEventListener('click',downloadTable);
  }catch(e){console.error(e);$('geoStatus').textContent='Error de carga: '+e.message;$('map').innerHTML='<p style="padding:30px">No se pudo cargar la versión nueva. Consulta la consola o recarga el sitio.</p>';}
 }
