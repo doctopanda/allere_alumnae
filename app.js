@@ -441,6 +441,41 @@ function switchTab(tab){
   el('tabHealth').setAttribute('aria-pressed',String(!isMap));
   if(isMap&&map){setTimeout(()=>map.invalidateSize(),40);}
 }
+function populateNutritionTable(){
+  const target=el('nutritionTable');
+  target.innerHTML='';
+  for(const m of nutritionData.municipios){
+    const tr=document.createElement('tr');
+    const values=['peso_bajo','sobrepeso','obesidad'].map(k=>{
+      const x=m.apto_tasa_descriptiva?m.indicadores?.[k]:null;
+      return x?'<b>'+x.pct.toFixed(2)+'%</b><small>'+fmt(x.n)+' / '+fmt(x.d)+'</small>':'<span class="no-data">Sin dato publicable</span>';
+    });
+    tr.innerHTML='<th>'+escapeHtml(m.municipio)+'</th>'+
+      '<td>'+fmt(m.cct_respaldo)+'</td>'+
+      '<td>'+(m.clasificados_imc==null?'No disponible':fmt(m.clasificados_imc))+'</td>'+
+      values.map(x=>'<td>'+x+'</td>').join('')+
+      '<td>'+(m.apto_tasa_descriptiva?'<span class="quality-ok">Corte parcial</span>':'<span class="quality-muted">Dato incompleto</span>')+'</td>';
+    target.appendChild(tr);
+  }
+}
+function exportNutritionPublic(){
+  // Solamente columnas municipales aprobadas en el JSON público; nunca microdatos.
+  const head=['Municipio','CCT respaldo','Clasificaciones IMC','Peso bajo n','Peso bajo %','Sobrepeso n','Sobrepeso %','Obesidad n','Obesidad %','Nota'];
+  const rows=[head];
+  for(const m of nutritionData.municipios){
+    const allowed=m.apto_tasa_descriptiva;
+    const vals=['peso_bajo','sobrepeso','obesidad'].flatMap(k=>{
+      const entry=allowed?m.indicadores?.[k]:null;
+      return entry?[entry.n,entry.pct.toFixed(2)]:['',''];
+    });
+    rows.push([m.municipio,m.cct_respaldo,allowed?m.clasificados_imc:'',...vals,allowed?'Muestra parcial, no prevalencia municipal':'Supresión por denominador incompleto']);
+  }
+  const content='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const u=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));
+  const a=document.createElement('a');a.href=u;a.download='ALLERE_IMC_MUNICIPAL_CORTE_PARCIAL_20261024.csv';document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+
 function populateHealth(){
   const h=health;
   el('hSchools').textContent=fmt(h.escuelas_con_datos);
@@ -468,7 +503,7 @@ async function main(){
     health=hs;records=info.records.map(school);
     if(records.length!==1501)throw Error('Cantidad de CCT distinta a la esperada: '+records.length);
     filtered=records;
-    updateKpis();fillMunicipalities();initMap();applyFilters(false);populateHealth();
+    updateKpis();fillMunicipalities();initMap();applyFilters(false);populateHealth();populateNutritionTable();
     loadPolygons();
     syncMapMode();
     el('mapMode').addEventListener('change',syncMapMode);
@@ -482,6 +517,7 @@ async function main(){
     el('estado').addEventListener('change',()=>applyFilters(true));
     el('reset').addEventListener('click',()=>{el('search').value='';el('municipio').value='';el('estado').value='';el('showAgebs').checked=false;applyFilters(true);clearAgebs();el('agebStatus').textContent='Selecciona un municipio para ver sus AGEB urbanas.';});
     el('download').addEventListener('click',exportList);
+    el('downloadNutrition').addEventListener('click',exportNutritionPublic);
     el('tabMap').addEventListener('click',()=>switchTab('map'));
     el('tabHealth').addEventListener('click',()=>switchTab('health'));
   }catch(error){
