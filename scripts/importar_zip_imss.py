@@ -20,8 +20,8 @@ def get(z,filename):
 
 def number(value):
     v=str(value or "").strip()
-    if re.fullmatch(r"\\d{1,3}(,\\d{3})+",v):v=v.replace(",","")
-    if not re.fullmatch(r"\\d+",v):raise ValueError("Conteo ambiguo/no entero: "+repr(v))
+    if re.fullmatch(r"\d{1,3}(,\d{3})+",v):v=v.replace(",","")
+    if not re.fullmatch(r"\d+",v):raise ValueError("Conteo ambiguo/no entero: "+repr(v))
     return int(v)
 
 def key(row):
