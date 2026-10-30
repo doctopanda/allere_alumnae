@@ -92,11 +92,11 @@ function initMap(){
  map.attributionControl.addAttribution('<a href="https://github.com/MacWilliXD/INEGI-geojson" target="_blank" rel="noopener">Cartografía municipal derivada INEGI-geojson</a>');
 }
 function fitSelection(){if(!map||!geoLayer)return;let bounds=null;geoLayer.eachLayer(l=>{const m=initialMunicipal(nameForGeo(l.feature));const ok=state.municipality?norm(m?.nombre)===norm(state.municipality):state.district?m?.distrito===state.district:false;if(ok){const b=l.getBounds();if(!bounds)bounds=b;else bounds.extend(b)}});if(bounds?.isValid())map.fitBounds(bounds.pad(.09),{maxZoom:12});else if(!state.district&&!state.municipality)map.fitBounds(geoLayer.getBounds().pad(.06));}
-function drawLegend(){const name=metricNames[state.metric];$('legendTitle').textContent=name;
+function drawLegend(){const name=state.level==='ageb'&&state.metric==='under5'?'Residentes 0–4 por AGEB · INEGI 2020':state.level==='ageb'&&state.metric==='under5_share'?'% residentes 0–4 por AGEB · INEGI 2020':metricNames[state.metric];$('legendTitle').textContent=name;
  $('legendNote').textContent=['under5','under5_share'].includes(state.metric)?(state.level==='ageb'?'INEGI 2020 · AGEB urbana':'CONAPO '+state.popYear+' · población residente'):'Proporción dentro del corte disponible';
- const target=$('legendBins');target.innerHTML='';const th=thresholds[state.metric],ramp=colors[state.metric]||ramps[state.metric];const arr=['< '+th[0],th[0]+'–'+th[1],th[1]+'–'+th[2],th[2]+'–'+th[3],'≥ '+th[3]];
+ const target=$('legendBins');target.innerHTML='';const th=state.level==='ageb'&&state.metric==='under5'?[15,50,150,350]:thresholds[state.metric],ramp=colors[state.metric]||ramps[state.metric];const arr=['< '+th[0],th[0]+'–'+th[1],th[1]+'–'+th[2],th[2]+'–'+th[3],'≥ '+th[3]];
  ramp.forEach((c,i)=>{target.innerHTML+='<div><i style="background:'+c+'"></i><small>'+arr[i]+(state.metric==='under5'?' niños':'%')+'</small></div>'});target.innerHTML+='<div><i style="background:#cdd6d0"></i><small>S/D</small></div>';}
-function renderTitle(){const title=metricNames[state.metric];$('mapTitle').textContent=title;
+function renderTitle(){const title=state.level==='ageb'&&['under5','under5_share'].includes(state.metric)?'INEGI Censo 2020 · residentes de 0–4 años por AGEB urbana':metricNames[state.metric];$('mapTitle').textContent=title;
  $('mapSubtitle').textContent=state.level==='ageb'?'AGEB = ubicación de planteles SEP; INEGI 2020 muestra residentes de 0–4 donde el censo ofrece conteos publicables. CONAPO no da proyección por AGEB.':state.level==='distrito'?'Distribución por Distrito de Salud (2025), con polígonos municipales.':'Cobertura y estado nutricional del corte escolar, por municipio.';
  const caution=['under5','under5_share'].includes(state.metric)?'CONAPO '+state.popYear+': población residente proyectada de 0–4 años. NO dividir evaluados IMSS entre esta población: el operativo escolar abarca otra cohorte y otro universo.':healthCategories.includes(state.metric)?'El color indica porcentajes entre IMC clasificados en escuelas extraídas, no prevalencia poblacional. Los municipios con celdas pequeñas se muestran grises.':state.metric==='pct_menores_evaluados'?'Denominador: menores registrados en las CCT extraídas (no población infantil del municipio).':'«Extraída» significa consulta confirmada a Tableau. No implica encuesta individual completa en toda la escuela.';
  $('filterNotice').textContent=caution;
@@ -202,7 +202,7 @@ function styleAgeB(f){
  const v=state.metric==='under5'?census?.p_0a4:state.metric==='under5_share'?census?.pct_0_4:state.metric==='cct_extraidas'?st?.pct_extraidas_en_tableau:state.metric==='pct_tableau_en_sep'?st?.pct_tableau_en_sep:null;
  let fill='#d6e6e8';
  if(v!=null&&Number.isFinite(v)){
-  const cuts=thresholds[state.metric]||[5,6,7,8];let ix=0;while(ix<4&&v>=cuts[ix])ix++;
+  const cuts=state.metric==='under5'?[15,50,150,350]:thresholds[state.metric]||[5,6,7,8];let ix=0;while(ix<4&&v>=cuts[ix])ix++;
   fill=(ramps[state.metric]||ramps.under5)[ix];
  }
  return {color:'#275763',weight:1.2,fillColor:fill,fillOpacity:['under5','under5_share','cct_extraidas','pct_tableau_en_sep'].includes(state.metric)?.72:.22};
