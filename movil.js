@@ -2,14 +2,14 @@
 /* ALLERE ALUMNAE · Webapp táctil. Consume los mismos agregados públicos que el atlas. */
 const $=id=>document.getElementById(id);
 const nf=new Intl.NumberFormat('es-MX');
-const fmt=x=>Number.isFinite(Number(x))?nf.format(Number(x)):'S/D';
+const fmt=x=>x===null||x===undefined||x===''||!Number.isFinite(Number(x))?'S/D':nf.format(Number(x));
 const percent=(a,b)=>Number.isFinite(Number(a))&&Number(b)>0?100*Number(a)/Number(b):null;
 const pct=(a,b)=>{const v=percent(a,b);return v===null?'S/D':v.toFixed(1)+'%'};
 const esc=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const num=x=>Number.isFinite(Number(x))?Number(x):null;
+const num=x=>x===null||x===undefined||x===''||!Number.isFinite(Number(x))?null:Number(x);
 const clamped=x=>Math.min(100,Math.max(0,num(x)??0));
 const cats=[['Peso Bajo','#5e9569'],['Normal','#3da393'],['Sobrepeso','#e4af63'],['Obesidad','#e47f91']];
-let data=null,district='',municipality='',currentView='home',frame=null,installPrompt=null;
+let data=null,district='',municipality='',currentView='home',frame=null,fullFrame=null,installPrompt=null;
 function homeMeta(){return data?.meta||null}
 function selectedRecord(){if(!data)return null;if(municipality)return data.municipios[municipality]||data.meta;if(district)return data.distritos[district]||data.meta;return data.meta}
 function selectedName(){if(municipality)return data?.municipios?.[municipality]?.nombre||municipality;if(district)return data?.distritos?.[district]?.nombre||'Distrito '+district;return 'Sonora'}
@@ -129,15 +129,18 @@ function renderDistrictRows(){
  $('districtRows').innerHTML=rows.map(({id,r,ratio})=>'<button type="button" class="territory '+(district===id?'active':'')+'" data-district-pick="'+esc(id)+'"><div><span>'+esc(r.nombre)+'</span><small>'+fmt(r.cct_extraidas)+' / '+fmt(r.cct_tableau)+' CCT</small><div class="meter"><span style="width:'+clamped(ratio)+'%"></span></div></div><em>'+pct(r.cct_extraidas,r.cct_tableau)+'</em></button>').join('');
 }
 function switchView(tab,push=true){
- if(!['home','map','dashboard'].includes(tab))tab='home';
+ if(!['home','map','dashboard','full'].includes(tab))tab='home';
  currentView=tab;
  document.querySelectorAll('.view').forEach(x=>{x.hidden=x.id!=='view-'+tab});
  document.querySelectorAll('.tabbar button').forEach(x=>{const selected=x.dataset.tab===tab;x.classList.toggle('active',selected);if(selected)x.setAttribute('aria-current','page');else x.removeAttribute('aria-current')});
- const main=$('appMain');main.style.overflowY=tab==='map'?'hidden':'auto';if(tab!=='map')main.scrollTop=0;
+ const main=$('appMain');main.style.overflowY=(tab==='map'||tab==='full')?'hidden':'auto';if(tab!=='map'&&tab!=='full')main.scrollTop=0;
  if(tab==='map'&&!frame){
   frame=document.createElement('iframe');frame.id='atlasMobileFrame';frame.className='map-frame';frame.title='Mapa interactivo de ALLERE ALUMNAE, Sonora';
   frame.src='./index.html?app=1';frame.loading='eager';frame.setAttribute('allow','fullscreen');
   $('mapSlot').replaceWith(frame);
+ }
+ if(tab==='full'&&!fullFrame){
+  fullFrame=document.createElement('iframe');fullFrame.id='allereFullFrame';fullFrame.className='map-frame';fullFrame.title='Tablero integral ALLERE ALUMNAE con graficos y filtros';fullFrame.src='./plataforma.html';fullFrame.loading='eager';$('fullSlot').replaceWith(fullFrame);
  }
  if(tab==='dashboard'&&data)renderDashboard();
  if(push&&location.hash!=='#'+tab)history.replaceState(null,'','#'+tab);
@@ -172,7 +175,7 @@ async function loadData(){
 document.addEventListener('DOMContentLoaded',()=>{
  document.addEventListener('click',handleClick);
  $('mobileDistrict').addEventListener('change',e=>{district=e.target.value;municipality='';refreshMunicipalities();renderDashboard()});
- $('mobileMunicipality').addEventListener('change',e=>{municipality=e.target.value;const r=data?.municipios?.[municipality];if(r?.distrito&&!district){district=r.distrito;$('mobileDistrict').value=district;}renderDashboard()});
+ $('mobileMunicipality').addEventListener('change',e=>{municipality=e.target.value;const r=data?.municipios?.[municipality];if(r?.distrito&&!district){district=r.distrito;refreshMunicipalities();}renderDashboard()});
  $('closeSheet').addEventListener('click',()=>$('detailSheet').close());
  $('detailSheet').addEventListener('click',e=>{if(e.target===$('detailSheet'))$('detailSheet').close()});
  window.addEventListener('hashchange',()=>switchView(location.hash.slice(1)||'home',false));
