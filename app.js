@@ -138,7 +138,7 @@ async function loadPolygons(){
       l.on('mouseout',()=>l.setStyle(polygonStyle(f)));
       l.on('click',()=>{
         const selected=[...el('municipio').options].find(o=>normalizeMunicipio(o.value)===normalizeMunicipio(name));
-        if(selected){el('municipio').value=selected.value;applyFilters(true);loadAgebs();}
+        if(selected){el('municipio').value=selected.value;atlasGeoClick(name);loadAgebs();}
         else setPolygonStatus('Nombre de municipio por revisar: '+name,'error');
       });
     }
@@ -328,6 +328,7 @@ async function loadAgebs(){
       const label='<b>AGEB '+escapeHtml(kind)+' '+escapeHtml(cv)+'</b><br>'+fmt(inside.length)+' planteles SEP ubicados en el polígono'+
         '<br><small>No hay indicadores clínicos válidos por AGEB. No representa domicilio ni estado nutricional de residentes.</small>';
       l.bindPopup(label);
+      l.on('click',()=>atlasSelectAgeb(cv,inside.length,inside.filter(s=>s.estado==='COMPLETADA').length));
       l.on('mouseover',()=>l.setStyle({weight:2.5,fillOpacity:.30}));
       l.on('mouseout',()=>l.setStyle({weight:1,fillOpacity:.13}));
     }
@@ -421,7 +422,7 @@ function applyFilters(autoFit=false){
   const q=el('search').value.trim().toLocaleLowerCase('es');
   const municipio=el('municipio').value;
   const estado=el('estado').value;
-  filtered=records.filter(s=>(!municipio||s.municipio===municipio)&&(!estado||s.estado===estado)&&(!q||[s.cct,s.nombre,s.localidad,s.municipio].some(t=>(t||'').toLocaleLowerCase('es').includes(q))));
+  filtered=records.filter(s=>(!municipio||normalizeMunicipio(s.municipio)===normalizeMunicipio(municipio))&&(!el('distritoAtlas').value||atlasMun(s.municipio)?.[1]===el('distritoAtlas').value)&&(!estado||s.estado===estado)&&(!q||[s.cct,s.nombre,s.localidad,s.municipio].some(t=>(t||'').toLocaleLowerCase('es').includes(q))));
   displayList();displayMap(autoFit);
   showNutritionDetail(el('municipio').value);
 }
@@ -446,7 +447,7 @@ function populateNutritionTable(){
   target.innerHTML='';
   for(const m of nutritionData.municipios){
     const tr=document.createElement('tr');
-    const values=['peso_bajo','sobrepeso','obesidad'].map(k=>{
+    const values=['peso_bajo','sobrepeso','obesidad','normal'].map(k=>{
       const x=m.apto_tasa_descriptiva?m.indicadores?.[k]:null;
       return x?'<b>'+x.pct.toFixed(2)+'%</b><small>'+fmt(x.n)+' / '+fmt(x.d)+'</small>':'<span class="no-data">Sin dato publicable</span>';
     });
@@ -460,11 +461,11 @@ function populateNutritionTable(){
 }
 function exportNutritionPublic(){
   // Solamente columnas municipales aprobadas en el JSON público; nunca microdatos.
-  const head=['Municipio','CCT respaldo','Clasificaciones IMC','Peso bajo n','Peso bajo %','Sobrepeso n','Sobrepeso %','Obesidad n','Obesidad %','Nota'];
+  const head=['Municipio','CCT respaldo','Clasificaciones IMC','Peso bajo n','Peso bajo %','Sobrepeso n','Sobrepeso %','Obesidad n','Obesidad %','Normal n','Normal %','Nota'];
   const rows=[head];
   for(const m of nutritionData.municipios){
     const allowed=m.apto_tasa_descriptiva;
-    const vals=['peso_bajo','sobrepeso','obesidad'].flatMap(k=>{
+    const vals=['peso_bajo','sobrepeso','obesidad','normal'].flatMap(k=>{
       const entry=allowed?m.indicadores?.[k]:null;
       return entry?[entry.n,entry.pct.toFixed(2)]:['',''];
     });
@@ -493,17 +494,176 @@ function populateHealth(){
   }
   el('municipalityHealth').appendChild(frag);
 }
+
+/* ALLERE ALUMNAE V3 · Atlas territorial con datos 1393 CCT (28 Oct 2026).
+   72 municipios / 6 DS / CCT agrupados: no publica medidas clínicas de escuela.
+   Los faltantes y las celdas suprimidas siempre se muestran como S/D. */
+let atlasData=null,atlasMunicipios=new Map(),atlasDistritos=new Map(),atlasSelection=null;
+const ATLAS_CATS=[['Peso Bajo',8],['Normal',9],['Sobrepeso',10],['Obesidad',11]];
+const ATLAS_LABELS={ext:'% escuelas extraídas / Tableau',evalesc:'% escuelas evaluadas / Tableau',evalmen:'% menores evaluados / registrados',tabsep:'% escuelas Tableau / SEP',bajo:'Peso bajo',normal:'Peso normal',sobre:'Sobrepeso',obes:'Obesidad',under5:'Menores de 5 años · sin denominador poblacional'};
+const ATLAS_SCALES={bajo:[1,2,3,5],normal:[35,45,55,65],sobre:[10,15,20,25],obes:[10,15,20,25],ext:[25,50,75,90],evalesc:[25,50,75,90],evalmen:[20,40,60,80],tabsep:[10,20,30,40]};
+const ATLAS_PALETTES={bajo:['#edf6f0','#c9e5d6','#94cab2','#4b9c79','#176f51'],normal:['#eaf4e7','#cde7c4','#a1d294','#64ac70','#2f7744'],sobre:['#fff7e6','#f9e1b0','#f1c77f','#d9a048','#a86d26'],obes:['#fff1eb','#f6cdbb','#ed9f80','#d96c56','#a13b35']};
+const ATLAS_NUTRI_CODES={bajo:8,normal:9,sobre:10,obes:11};
+function atlasMun(name){return atlasMunicipios.get(normalizeMunicipio(name))||null;}
+function atlasDistrict(code){return atlasDistritos.get(String(code||''))||null;}
+function atlasRate(num,den){return den>0?num*100/den:null;}
+function atlasMetric(r){
+  if(!r)return null;
+  const id=el('indicadorAtlas').value;
+  if(id==='under5')return null;
+  if(id==='ext'||id==='evalesc')return atlasRate(r[4],r[3]);
+  if(id==='evalmen')return atlasRate(r[6],r[5]);
+  if(id==='tabsep')return atlasRate(r[3],r[2]);
+  const ix=ATLAS_NUTRI_CODES[id];
+  if(ix!=null&&r[ix]!=null)return atlasRate(r[ix],r[7]);
+  return null;
+}
+function atlasScaleColor(val){
+  if(val==null||!Number.isFinite(val))return '#cdd6d0';
+  const metric=el('indicadorAtlas').value,steps=ATLAS_SCALES[metric]||[25,50,75,90];
+  const colors=ATLAS_PALETTES[metric]||(metric==='evalmen'||metric==='tabsep'?['#f0f4f7','#ccdee9','#9cbed0','#5b93ab','#28647d']:['#eaf3e9','#cbdfd1','#96c8aa','#5d9e7d','#20684e']);
+  let ix=0;while(ix<4&&val>=steps[ix])ix++;
+  return colors[ix];
+}
+function atlasPublicRow(name){
+  if(el('nivelAtlas').value==='distrito'){
+    const r=atlasMun(name);return atlasDistrict(r?.[1]);
+  }
+  return atlasMun(name);
+}
+polygonStyle=function(feature){
+  const name=municipalityName(feature),rec=atlasPublicRow(name);
+  const ageb=el('nivelAtlas').value==='ageb';
+  const selected=atlasSelection&&(atlasSelection.type==='municipio'?normalizeMunicipio(atlasSelection.name)===normalizeMunicipio(name):atlasSelection.type==='distrito'?atlasMun(name)?.[1]===atlasSelection.code:false);
+  const color=ageb?'#d9e4df':atlasScaleColor(atlasMetric(rec));
+  return {color:selected?'#19493a':'#4f6d61',weight:selected?2.7:1,opacity:.85,fillColor:color,fillOpacity:ageb?.27:.70};
+};
+municipalityPopupText=function(name){
+  const rec=atlasPublicRow(name),v=atlasMetric(rec);const l=ATLAS_LABELS[el('indicadorAtlas').value];
+  return '<b>'+escapeHtml(el('nivelAtlas').value==='distrito'?('DS'+rec?.[0]+' · '+rec?.[1]):name)+'</b><br>'+
+    escapeHtml(l)+': <b>'+(v==null?'Sin dato suficiente':v.toFixed(2)+'%')+'</b>'+
+    '<br><small>Clic para abrir ficha territorial. No es prevalencia poblacional.</small>';
+};
+function atlasChangeLegend(){
+  const metric=el('indicadorAtlas').value,l=ATLAS_LABELS[metric];
+  el('legendTitle').textContent=l;
+  el('legendMetric').textContent=metric==='under5'?'Sin denominador de población 0–4':'Escuelas con resultados confirmados; gris = sin dato';
+  const b=el('legendBins');b.innerHTML='';
+  if(metric==='under5'){b.innerHTML='<span><i style="background:#cdd6d0"></i>No calculable</span>';return;}
+  const cuts=ATLAS_SCALES[metric],labels=['<'+cuts[0]+'%',cuts[0]+'–<'+cuts[1]+'%',cuts[1]+'–<'+cuts[2]+'%',cuts[2]+'–<'+cuts[3]+'%','≥'+cuts[3]+'%'];
+  const pal=ATLAS_PALETTES[metric]||(metric==='evalmen'||metric==='tabsep'?['#f0f4f7','#ccdee9','#9cbed0','#5b93ab','#28647d']:['#eaf3e9','#cbdfd1','#96c8aa','#5d9e7d','#20684e']);
+  pal.forEach((p,i)=>{b.innerHTML+='<span><i style="background:'+p+'"></i>'+labels[i]+'</span>'});
+  b.innerHTML+='<span><i style="background:#cdd6d0"></i>S/D</span>';
+}
+refreshPolygonMetric=function(){
+  if(municipalLayer)municipalLayer.eachLayer(l=>{l.setStyle(polygonStyle(l.feature));l.unbindTooltip();l.bindTooltip(municipalityPopupText(municipalityName(l.feature)),{sticky:true})});
+  atlasChangeLegend();
+};
+showNutritionDetail=function(name){
+  const r=atlasMun(name),metric=el('indicadorAtlas').value,v=atlasMetric(r);
+  const node=el('nutritionDetail');
+  if(!r){node.textContent='Elige un municipio para ver los conteos confirmados.';return}
+  node.innerHTML='<b>'+escapeHtml(r[0])+'</b><p>'+escapeHtml(ATLAS_LABELS[metric])+': <strong>'+(v==null?'Sin dato publicable':v.toFixed(2)+'%')+'</strong></p>'+
+  '<small>'+fmt(r[4])+' CCT extraídas de '+fmt(r[3])+' Tableau; '+fmt(r[6])+' menores evaluados entre '+fmt(r[5])+' registrados.</small>';
+};
+function atlasRowForSidebar(){
+  if(atlasSelection?.type==='ageb')return null;
+  if(atlasSelection?.type==='municipio')return atlasMun(atlasSelection.name);
+  if(atlasSelection?.type==='distrito')return atlasDistrict(atlasSelection.code);
+  const z=atlasData.totales;
+  return ['Sonora','',z.cct_sep,z.cct_tableau,z.cct_extraidas,z.menores_registrados,z.menores_evaluados,z.imc_clasificados,z.categorias['Peso Bajo'],z.categorias.Normal,z.categorias.Sobrepeso,z.categorias.Obesidad,z.edad_5_9,z.edad_10_16,z.menores5_evaluados];
+}
+function atlasCard(label,val,detail=''){
+  return '<div class="terr-card"><small>'+escapeHtml(label)+'</small><b>'+(val==null?'S/D':typeof val==='number'?fmt(val):escapeHtml(val))+'</b><small>'+escapeHtml(detail)+'</small></div>';
+}
+function atlasPercent(val){return val==null?'S/D':val.toFixed(1)+'%'}
+function atlasSelectMunicipio(name){
+ const r=atlasMun(name);if(!r)return;
+ atlasSelection={type:'municipio',name:r[0]};el('distritoAtlas').value=r[1];const opts=[...el('municipio').options];const opt=opts.find(o=>normalizeMunicipio(o.value)===normalizeMunicipio(name));if(opt)el('municipio').value=opt.value;
+ renderAtlasSidebar();applyFilters(true);refreshPolygonMetric();
+}
+function atlasSelectDistrict(code){
+ const r=atlasDistrict(code);if(!r)return;
+ atlasSelection={type:'distrito',code:r[0]};el('distritoAtlas').value=r[0];el('municipio').value='';
+ renderAtlasSidebar();applyFilters(true);refreshPolygonMetric();
+}
+function atlasSelectAgeb(code,count,done){
+  atlasSelection={type:'ageb',code,count,done};renderAtlasSidebar();
+}
+function atlasRenderMembers(){
+ const box=el('terrMembers');box.innerHTML='';
+ if(!atlasSelection){for(const r of atlasData.distritos){const b=document.createElement('button');b.className='territory-link';b.textContent='DS'+r[0]+' · '+r[1]+' · '+fmt(r[4])+' CCT';b.addEventListener('click',()=>atlasSelectDistrict(r[0]));box.append(b)}return;}
+ if(atlasSelection.type==='distrito'){
+  for(const r of atlasData.municipios.filter(m=>m[1]===atlasSelection.code)){
+   const b=document.createElement('button');b.className='territory-link';b.textContent=r[0]+' · '+fmt(r[4])+' CCT extraídas';b.addEventListener('click',()=>atlasSelectMunicipio(r[0]));box.append(b)
+  }
+ }else if(atlasSelection.type==='municipio'){
+  box.innerHTML='<p class="terr-help">Distrito de Salud '+escapeHtml(atlasMun(atlasSelection.name)?.[1])+'. Para conocer AGEB del plantel, activa la capa AGEB y consulta el polígono.</p>';
+ }else{
+  box.innerHTML='<p class="terr-help">AGEB = ubicación de planteles. No hay microdatos o tasas nutricionales divulgables por AGEB.</p>';
+ }
+}
+function renderAtlasSidebar(){
+ if(!atlasData)return;
+ const r=atlasRowForSidebar(),a=atlasSelection;
+ el('terrTitle').textContent=a?.type==='ageb'?'AGEB '+a.code:r?r[0]:'Sonora';
+ el('terrSubtitle').textContent=a?.type==='ageb'?'Escuelas localizadas en el polígono, sin información clínica':a?.type==='municipio'?'DS'+r[1]+' · ficha municipal':a?.type==='distrito'?'Distrito de Salud '+r[0]:'Estado de Sonora · 1,393 CCT extraídas';
+ if(a?.type==='ageb'){
+  el('terrCoverage').innerHTML=atlasCard('CCT del filtro Tableau',a.count,'escuelas con ubicación SEP')+atlasCard('CCT extraídas',a.done,'con resultado IMSS confirmado')+atlasCard('Cobertura entre Tableau',a.count?atlasPercent(a.done/a.count*100):'S/D','no incluye escuelas SEP fuera del filtro');
+  el('terrNutri').innerHTML='<p class="terr-help">No hay tasas IMC autorizadas por AGEB; este polígono muestra sólo cobertura escolar. No es residencia.</p>';
+  el('terrAge').innerHTML='<p class="terr-help">No existe denominador 0–4 ni seguimiento clínico por AGEB.</p>';atlasRenderMembers();return;
+ }
+ const v=(ix)=>r?.[ix]??null;
+ el('terrCoverage').innerHTML=atlasCard('CCT SEP',v(2),'padrón 2026')+atlasCard('CCT Tableau',v(3),'visibles en filtro')+atlasCard('CCT extraídas',v(4),'resultados confirmados')+
+ atlasCard('% extracción',v(3)?atlasPercent(v(4)/v(3)*100):'S/D','de CCT Tableau')+atlasCard('Menores registrados',v(5),'en CCT extraídas')+
+ atlasCard('Menores evaluados',v(6),'en CCT extraídas')+atlasCard('% evaluados',v(5)?atlasPercent(v(6)/v(5)*100):'S/D','de registrados')+atlasCard('IMC clasificados',v(7),'tablero Peso y Talla');
+ const box=el('terrNutri');box.innerHTML='';
+ for(const [label,ix] of ATLAS_CATS){const n=v(ix),p=n==null||!v(7)?null:n/v(7)*100;
+  box.innerHTML+='<div class="terr-bar"><div class="between"><b>'+label+'</b><strong>'+atlasPercent(p)+'</strong></div><div class="terr-track"><i style="width:'+Math.min(100,p||0)+'%;background:'+(ATLAS_PALETTES[{ 'Peso Bajo':'bajo',Normal:'normal',Sobrepeso:'sobre',Obesidad:'obes'}[label]][3])+'"></i></div><small>'+(n==null?'Celda suprimida por confidencialidad':fmt(n)+' / '+fmt(v(7))+' clasificados')+'</small></div>';
+ }
+ el('terrAge').innerHTML='<div class="terr-age">5–9 años evaluados: <b>'+fmt(v(12))+'</b></div><div class="terr-age">10–16 años evaluados: <b>'+fmt(v(13))+'</b></div><div class="terr-age">Menores de cinco años (4 años observados): <b>'+fmt(v(14))+'</b></div><p class="terr-help">No contamos aún con la población 0–4 por municipio/AGEB o distrito para calcular cobertura poblacional.</p>';
+ atlasRenderMembers();
+}
+function atlasGeoClick(name){
+ const r=atlasMun(name);if(!r)return;
+ if(el('nivelAtlas').value==='distrito')atlasSelectDistrict(r[1]);
+ else atlasSelectMunicipio(r[0]);
+}
+function atlasSyncList(){
+ const district=el('distritoAtlas').value;if(district&&el('nivelAtlas').value!=='distrito')el('municipio').value='';
+}
+function atlasPopulateHealth(){
+ health={escuelas_con_datos:atlasData.totales.cct_extraidas,evaluados_registrados:atlasData.totales.menores_evaluados,clasificados_imc:atlasData.totales.imc_clasificados,imc_estado_muestra:atlasData.totales.categorias,
+  municipios_publicables:atlasData.municipios.filter(r=>r[8]!=null).map(r=>({municipio:r[0],escuelas:r[4],evaluados:r[6],'Peso Bajo':r[8],Normal:r[9],Sobrepeso:r[10],Obesidad:r[11]}))};
+ nutritionData={municipios:atlasData.municipios.map(r=>({municipio:r[0],cct_respaldo:r[4],clasificados_imc:r[7],apto_tasa_descriptiva:r[8]!=null,indicadores:Object.fromEntries([['peso_bajo',8],['normal',9],['sobrepeso',10],['obesidad',11]].map(([k,index])=>[k,r[index]==null?null:{n:r[index],d:r[7],pct:r[index]/r[7]*100}]))}))};
+ nutritionIndex=new Map(nutritionData.municipios.map(r=>[normalizeMunicipio(r.municipio),r]));
+}
+function atlasReset(){
+ atlasSelection=null;el('distritoAtlas').value='';el('nivelAtlas').value='municipio';el('indicadorAtlas').value='obes';refreshPolygonMetric();renderAtlasSidebar();
+}
+
 async function main(){
   try{
-    const [schoolsResponse,healthResponse,nutritionResponse]=await Promise.all([fetch('./data/escuelas.json'),fetch('./data/salud_agregada.json'),fetch('./data/nutricion_municipal_parcial.json')]);
-    if(!schoolsResponse.ok||!healthResponse.ok||!nutritionResponse.ok)throw Error('Error al cargar datos');
+    const [schoolsResponse,healthResponse,nutritionResponse,atlasResponse]=await Promise.all([fetch('./data/escuelas.json'),fetch('./data/salud_agregada.json'),fetch('./data/nutricion_municipal_parcial.json'),fetch('./data/indicadores_20261028_v3.json')]);
+    if(!schoolsResponse.ok||!healthResponse.ok||!nutritionResponse.ok||!atlasResponse.ok)throw Error('Error al cargar datos');
     const [info,hs,nm]=await Promise.all([schoolsResponse.json(),healthResponse.json(),nutritionResponse.json()]);
-    nutritionData=nm;
-    nutritionIndex=new Map(nm.municipios.map(r=>[normalizeMunicipio(r.municipio),r]));
-    health=hs;records=info.records.map(school);
+    atlasData=await atlasResponse.json();
+    if(atlasData.municipios.length!==72||atlasData.distritos.length!==6||atlasData.totales.cct_extraidas!==1393)throw Error('Inconsistencia regional/IMSS corte 28-10-2026');
+    atlasMunicipios=new Map(atlasData.municipios.map(r=>[normalizeMunicipio(r[0]),r]));
+    atlasDistritos=new Map(atlasData.distritos.map(r=>[r[0],r]));
+    atlasPopulateHealth();
+
+    records=info.records.map(school);
     if(records.length!==1501)throw Error('Cantidad de CCT distinta a la esperada: '+records.length);
     filtered=records;
     updateKpis();fillMunicipalities();initMap();applyFilters(false);populateHealth();populateNutritionTable();
+    atlasData.distritos.forEach(r=>el('distritoAtlas').add(new Option('DS'+r[0]+' · '+r[1],r[0])));
+    atlasData.municipios.forEach(r=>{if(![...el('municipio').options].some(o=>normalizeMunicipio(o.value)===normalizeMunicipio(r[0])))el('municipio').add(new Option(r[0],r[0]));});
+    renderAtlasSidebar();
+    el('nivelAtlas').addEventListener('change',()=>{atlasSelection=null;refreshPolygonMetric();renderAtlasSidebar();if(el('nivelAtlas').value==='ageb'&&el('municipio').value){el('showAgebs').checked=true;loadAgebs();}});
+    el('indicadorAtlas').addEventListener('change',()=>{refreshPolygonMetric();renderAtlasSidebar();});
+    el('distritoAtlas').addEventListener('change',()=>{const c=el('distritoAtlas').value;if(c)atlasSelectDistrict(c);else{atlasSelection=null;renderAtlasSidebar();applyFilters(true);refreshPolygonMetric();}});
+
     loadPolygons();
     syncMapMode();
     el('mapMode').addEventListener('change',syncMapMode);
@@ -513,9 +673,9 @@ async function main(){
     el('polyMetric').addEventListener('change',refreshPolygonMetric);
 
     el('search').addEventListener('input',()=>{clearTimeout(debounce);debounce=setTimeout(()=>applyFilters(true),230)});
-    el('municipio').addEventListener('change',()=>{applyFilters(true);loadAgebs();});
+    el('municipio').addEventListener('change',()=>{const v=el('municipio').value;if(v)atlasSelectMunicipio(v);else{atlasSelection=null;renderAtlasSidebar();applyFilters(true);refreshPolygonMetric()}loadAgebs();});
     el('estado').addEventListener('change',()=>applyFilters(true));
-    el('reset').addEventListener('click',()=>{el('search').value='';el('municipio').value='';el('estado').value='';el('showAgebs').checked=false;applyFilters(true);clearAgebs();el('agebStatus').textContent='Selecciona un municipio para ver sus AGEB urbanas.';});
+    el('reset').addEventListener('click',()=>{el('search').value='';el('municipio').value='';el('estado').value='';el('showAgebs').checked=false;atlasReset();applyFilters(true);clearAgebs();el('agebStatus').textContent='Selecciona un municipio para ver sus AGEB urbanas.';});
     el('download').addEventListener('click',exportList);
     el('downloadNutrition').addEventListener('click',exportNutritionPublic);
     el('tabMap').addEventListener('click',()=>switchTab('map'));
