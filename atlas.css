@@ -4,3 +4,12 @@
 /* CONAPO 0-4: proyección anual y panel territorial */
 .year-row{border:1px solid #d9e9d7;background:#edf5ec;padding:10px 12px;border-radius:12px;margin-top:15px}.year-row>div{display:flex;gap:9px;align-items:center;margin-top:4px}.year-row input{min-width:0;flex:1;accent-color:#22765d}.year-row strong{font:800 14px Manrope;color:#17553f}.demog-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0}.demog-kpis .info-card{background:#eef6ec;border-radius:10px;padding:13px}.chart-shell{background:white;border:1px solid #dbe6da;border-radius:12px;padding:15px;margin-bottom:20px}.chart-shell svg{width:100%;height:auto}.mini-chart{background:#f7fbf6;border:1px solid #e0ebe1;border-radius:10px;margin-top:12px}.mini-chart svg{width:100%;height:120px}.demog-empty{font-size:12px;color:#71837b;line-height:1.55}.population-table{width:100%;border-collapse:collapse;font-size:12px}.population-table th,.population-table td{text-align:right;padding:10px 9px;border-bottom:1px solid #e2ebe4}.population-table th:first-child,.population-table td:first-child{text-align:left}.population-table .highlight-year{background:#edf5e7;font-weight:800}.who-panel{overflow:auto}@media(max-width:820px){.demog-kpis{grid-template-columns:1fr 1fr}.year-row{margin-top:12px}}
 .census-compare{margin:12px 0 20px;background:#fff5e5;border-left:3px solid #d69b50;border-radius:9px;padding:14px 17px;color:#6a5b43}.census-compare strong{font-size:12px}.census-compare p{font-size:11px;line-height:1.7;margin:7px 0}.census-compare a{color:#125c48;font-size:11px;font-weight:700}
+
+/* Leyenda y filtros de estado de las escuelas: CCT extraída ≠ menores censados */
+.school-counts{font-size:11px;line-height:1.7;padding:11px 12px;border:1px solid #d5e4d9;border-radius:10px;background:#f2f8f2;margin-top:9px;color:#465e51}
+.school-counts b{font-weight:800}.school-counts strong{color:#235e4a}
+.school-figure-green{color:#187a5d;font-weight:700}.school-figure-amber{color:#a16c18;font-weight:700}.school-figure-grey{color:#647587;font-weight:700}
+.school-colors{display:flex;gap:10px;flex-wrap:wrap;margin:11px 0 4px;color:#526f5e;font-size:10px}
+.school-colors span{display:flex;align-items:center;gap:5px}
+.school-key{width:10px;height:10px;flex:none;display:inline-block;border:1px solid #fff;box-shadow:0 0 0 1px #94a19a;border-radius:50%}
+.school-key-extracted{background:#218569}.school-key-tableau{background:#dca45b}.school-key-sep{background:#81919b}
