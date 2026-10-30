@@ -13,7 +13,20 @@
   <div class="year-row"><label for="populationYear">Año de proyección CONAPO</label><div><input id="populationYear" type="range" min="2015" max="2030" value="2026" step="1"><strong id="populationYearVal">2026</strong></div></div>
   <label for="distrito">Distrito de Salud</label><select id="distrito"><option value="">Todos los distritos</option></select>
   <label for="municipio">Municipio</label><select id="municipio"><option value="">Todos los municipios</option></select>
-  <div class="inline"><label class="check"><input type="checkbox" id="showSchools"> Ver escuelas SEP y su estado</label><button id="reset" type="button" class="reset">Limpiar</button></div>
+  <div class="inline"><label class="check"><input type="checkbox" id="showSchools" checked> Mostrar puntos de escuelas</label><button id="reset" type="button" class="reset">Limpiar</button></div>
+  <label for="schoolFilter">Escuelas visibles en el mapa</label>
+  <select id="schoolFilter" aria-label="Filtrar planteles por estado de obtención">
+   <option value="TODAS">Todas las escuelas SEP (5,464)</option>
+   <option value="EXTRAIDA">Con datos extraídos (1,393)</option>
+   <option value="TABLEAU">En Tableau, pendientes de extracción (104)</option>
+   <option value="SEP">En SEP, no observadas en Tableau (3,967)</option>
+  </select>
+  <div id="schoolCounts" class="school-counts" aria-live="polite">Cargando distribución de escuelas…</div>
+  <div class="school-colors" aria-label="Colores de escuelas">
+    <span><i class="school-key school-key-extracted"></i> Datos extraídos</span>
+    <span><i class="school-key school-key-tableau"></i> En Tableau, pendientes</span>
+    <span><i class="school-key school-key-sep"></i> Sólo padrón SEP</span>
+  </div>
   <div class="notice" id="filterNotice">Selecciona un territorio en el mapa o mediante los filtros. Las zonas sin datos de IMC suficiente aparecen en gris.</div>
   <div class="sources"><b>Fuentes y límites</b><p>IMSS Tableau, corte del 28/10/2026. SEP 2026. Regionalización sanitaria oficial de Sonora (2025). Cartografía municipal de referencia. Los datos IMSS son agregados por escuela de ubicación, no residencia del menor. La capa CONAPO representa población residente proyectada; la capa INEGI corresponde al censo 2020.</p></div>
  </div></aside>
