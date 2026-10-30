@@ -308,3 +308,32 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
  .boobok-ficha-layout .boobok-acronym{grid-template-columns:repeat(2,minmax(0,1fr))}
  .boobok-dialog{width:98vw;max-width:98vw}
 }
+
+
+/* Navegación bidireccional plataforma ↔ visor sin afectar Leaflet */
+.atlas-nav{display:flex;align-items:center;gap:9px;flex-wrap:wrap;justify-content:flex-end}
+.portal-dashboard-link{display:inline-flex;align-items:center;justify-content:center;
+ border:1px solid #b9ddd0;background:#eaf6ed;color:#167469;border-radius:9px;
+ padding:11px 12px;font-size:11px;font-weight:900;text-decoration:none;white-space:nowrap;
+ box-shadow:0 3px 10px rgba(20,93,69,.08);transition:background .2s,transform .2s}
+.portal-dashboard-link:hover{background:#d6eee2;transform:translateY(-1px)}
+.portal-dashboard-link:focus-visible{outline:3px solid #EC889B;outline-offset:3px}
+/* Imagen compacta mejorada, centrada en el guardián, sin cortar textos de la tarjeta */
+.boobok-intro{display:grid;grid-template-columns:108px minmax(0,1fr);align-items:center;gap:12px;
+ background:linear-gradient(130deg,#f2faf4,#e6f4eb 59%,#fff0f2);border:1px solid #b8dccc;
+ border-radius:16px;padding:12px;margin-bottom:18px;box-shadow:0 5px 21px #2b7b6112}
+.boobok-intro-image{width:108px;min-width:108px;height:133px;min-height:133px;overflow:hidden;
+ position:relative;border:1px solid #aed5c5;border-radius:12px;background:#0d746d}
+.boobok-intro-image img{display:block;position:absolute;inset:0;width:100%;height:100%;
+ object-fit:cover;object-position:center 16%;transform:scale(1.23);transform-origin:center 30%}
+.boobok-intro-copy{min-width:0}
+.boobok-intro-copy strong{font:900 22px Manrope,sans-serif;color:#08746a}
+.boobok-intro-copy .boobok-overline{font-size:9px;line-height:1.4;letter-spacing:1.05px}
+.boobok-intro-copy p{font-size:10px;line-height:1.5;color:#648176;margin:7px 0 11px}
+.boobok-intro-copy .boobok-show{width:100%;max-width:none;align-self:stretch;text-align:center;
+ font-size:10px;line-height:1.4;padding:10px 8px;background:#0b786f;border-radius:9px}
+.boobok-intro-copy .boobok-show:hover{background:#08665f}
+@media(max-width:1380px){.atlas-nav{justify-content:flex-start}.portal-dashboard-link{padding:9px 10px}}
+@media(max-width:760px){.atlas-nav{width:100%}.portal-dashboard-link{width:100%}
+ .boobok-intro{grid-template-columns:95px minmax(0,1fr)}
+ .boobok-intro-image{width:95px;min-width:95px;height:122px;min-height:122px}}
