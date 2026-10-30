@@ -7,7 +7,7 @@ Uso: python scripts/inegi_ageb_2020.py --zip archivo.zip
 Sin --zip, descarga la fuente oficial. Publica sólo conteos censales AGEB
 sin cifras suprimidas ni detalles por manzana. Nunca proyecta 2026 por AGEB.
 """
-import argparse, csv, io, json, re, urllib.request, zipfile, pathlib
+import argparse, csv, io, json, re, urllib.request, urllib.error, zipfile, pathlib, time, socket
 
 URL='https://www.inegi.org.mx/contenidos/programas/ccpv/2020/datosabiertos/ageb_manzana/ageb_mza_urbana_26_cpv2020_csv.zip'
 ROOT=pathlib.Path(__file__).resolve().parents[1]
@@ -20,6 +20,8 @@ def numeric(v):
 
 def run(input_zip,output):
     with zipfile.ZipFile(input_zip) as z:
+        bad=z.testzip()
+        if bad:raise ValueError('ZIP dañado; primera entrada corrupta: '+str(bad))
         names=[n for n in z.namelist() if n.endswith('conjunto_de_datos_ageb_urbana_26_cpv2020.csv')]
         if len(names)!=1:raise ValueError('El ZIP no contiene el archivo oficial de AGEB urbana 26 esperado: '+str(names))
         with z.open(names[0]) as raw:
@@ -71,8 +73,49 @@ if __name__=='__main__':
         import tempfile
         with tempfile.TemporaryDirectory() as d:
             target=pathlib.Path(d)/'INEGI_Sonora_AGEB_2020.zip'
-            print('Descargando fuente oficial INEGI:',URL)
-            request=urllib.request.Request(URL,headers={'User-Agent':'ALLERE-ALUMNAE/1.0 (public demographic research)'})
-            with urllib.request.urlopen(request,timeout=100) as response:
-                target.write_bytes(response.read(40_000_000))
+            # El catálogo oficial publica un ZIP binario; no intentar abrirlo como HTML.
+            # No insistir ante 403/429, y no usar espejos no verificados.
+            sources=[URL, URL.replace('https://www.inegi.org.mx/','https://inegi.org.mx/')]
+            ok=False
+            for source in sources:
+                for attempt in range(1,3):
+                    try:
+                        print('INEGI descarga oficial:',source,'intento',attempt,flush=True)
+                        request=urllib.request.Request(source,headers={
+                            'User-Agent':'Mozilla/5.0 (compatible; ALLERE-ALUMNAE/1.0; public-census-data)',
+                            'Accept':'application/zip,application/octet-stream,*/*',
+                            'Accept-Encoding':'identity'})
+                        with urllib.request.urlopen(request,timeout=90) as response:
+                            status=getattr(response,'status',200)
+                            ctype=response.headers.get('Content-Type','')
+                            print('HTTP:',status,'Content-Type:',ctype,flush=True)
+                            limit=45_000_000
+                            with target.open('wb') as out:
+                                total=0
+                                while True:
+                                    block=response.read(1024*1024)
+                                    if not block:break
+                                    total+=len(block)
+                                    if total>limit:raise ValueError('Archivo supera 45 MB; detener para revisar fuente')
+                                    out.write(block)
+                        print('Descargados',total,'bytes',flush=True)
+                        if not zipfile.is_zipfile(target):
+                            raise ValueError('La respuesta no es un ZIP válido (posible página HTML o descarga interrumpida)')
+                        ok=True
+                        break
+                    except urllib.error.HTTPError as e:
+                        print('HTTP de INEGI:',e.code,e.reason,flush=True)
+                        if e.code in (401,403,404,429):
+                            print('No se forzará descarga ante esta respuesta.',flush=True)
+                            break
+                        if attempt==2:break
+                        time.sleep(4)
+                    except (urllib.error.URLError,socket.timeout,TimeoutError,OSError,ValueError) as e:
+                        print('Error de conexión o validación:',type(e).__name__,str(e)[:250],flush=True)
+                        if attempt==2:break
+                        time.sleep(4)
+                if ok:break
+            if not ok:
+                raise SystemExit('No se pudo recuperar ZIP oficial INEGI desde GitHub Actions. '
+                  'Descárgalo con un navegador y usa --zip RUTA, sin cambiar los valores.')
             run(target,a.output)
