@@ -64,3 +64,10 @@ El dataset AGEB publicado se limita a información censal agregada, nunca inform
 
 Los anteriores archivos `app.js`, `styles.css` y `data/salud_agregada.json` quedan conservados como legado; `index.html` ya no los utiliza.
 
+
+
+## 📱 ALLERE ALUMNAE · Webapp móvil
+
+**Inicio:** https://doctopanda.github.io/allere_alumnae/movil.html
+
+Webapp instalable con navegación Inicio, Mapa, Tablero y Visor. Consume los agregados públicos existentes; el mapa y los datos requieren internet. [Guía técnica](./PWA_MOVIL.md).
