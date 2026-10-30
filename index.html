@@ -1,162 +1,28 @@
-<!doctype html>
-<html lang="es">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#123e36">
-  <meta name="description" content="ALLERE ALUMNAE: mapa exploratorio de cobertura escolar en Sonora basado en catálogos SEP, filtros IMSS y extracción local.">
-  <title>ALLERE ALUMNAE | Observatorio Escolar de Sonora</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  <link rel="stylesheet" href="./styles.css">
-</head>
-<body>
-  <div class="app">
-    <aside class="sidebar" aria-label="Panel de control">
-      <header class="brand">
-        <div class="brand-logo" aria-hidden="true">✦</div>
-        <div><p class="eyebrow">SALUD ESCOLAR · SONORA</p><h1>ALLERE <em>ALUMNAE</em></h1><p class="tagline">Observatorio territorial · 2025–2026</p></div>
-      </header>
-      <div class="content">
-        <section class="intro">
-          <div class="section-title"><span class="overline">CORTE DE INVENTARIO</span><span class="live-dot"></span></div>
-          <h2>Lo que sabemos.<br><em>Lo que falta.</em></h2>
-          <p>Mapa de escuelas identificadas en el filtro IMSS Sonora, contrastadas con el catálogo SEP. El avance de captura no equivale a evaluaciones verificadas.</p>
-        </section>
-        <section class="kpis" aria-label="Indicadores de cobertura">
-          <div class="kpi kpi-main"><span>CCT observadas en Tableau</span><strong id="kTotal">1,501</strong><small>Ciclo reportado 2025–2026</small></div>
-          <div class="kpi"><span>Completadas en checkpoint</span><strong id="kComplete">1,393</strong><small>Último estado local</small></div>
-          <div class="kpi"><span>Fallidas</span><strong id="kFailed">17</strong><small>Para reintento</small></div>
-          <div class="kpi"><span>Pendientes / históricas</span><strong id="kPending">91</strong><small>87 + 4 sin estado</small></div>
-        </section>
-        <section class="progress">
-          <div class="between"><h3>Progreso de consulta</h3><strong id="kPercent">92.8%</strong></div>
-          <div class="bar"><i id="barDone"></i><i id="barFailed"></i><i id="barPending"></i></div>
-          <p>Corresponde al checkpoint; no representa la proporción de escolares evaluados.</p>
-        </section>
-        <div class="divider"></div>
-        <section class="filters">
-          <div class="between"><h3>Explorar el territorio</h3><button type="button" id="reset" class="text-button">Limpiar filtros</button></div>
-          <label for="search">Buscar por CCT, escuela o localidad</label>
-          <div class="searchwrap"><span aria-hidden="true">⌕</span><input id="search" type="search" autocomplete="off" placeholder="Ej. 26DPR · Hermosillo"></div>
-          <label for="nivelAtlas">Nivel territorial</label>
-          <select id="nivelAtlas"><option value="municipio">Municipio (72)</option><option value="distrito">Distrito de Salud (6)</option><option value="ageb">AGEB del plantel (si hay geometría)</option></select>
-          <label for="distritoAtlas">Distrito de Salud</label><select id="distritoAtlas"><option value="">Todos los distritos</option></select>
-          <label for="indicadorAtlas">Indicador que colorea el mapa</label>
-          <select id="indicadorAtlas">
-            <optgroup label="Cobertura del operativo">
-              <option value="ext">% CCT extraídas / CCT Tableau</option>
-              <option value="evalesc">% escuelas con menores evaluados / Tableau</option>
-              <option value="evalmen">% menores evaluados / menores registrados</option>
-              <option value="tabsep">% escuelas Tableau / escuelas SEP</option>
-            </optgroup><optgroup label="Estado nutricional">
-              <option value="bajo">Peso bajo · categoría IMC</option>
-              <option value="normal">Peso normal · categoría IMC</option>
-              <option value="sobre">Sobrepeso · categoría IMC</option>
-              <option value="obes" selected>Obesidad · categoría IMC</option>
-            </optgroup><optgroup label="Primera infancia"><option value="under5">Menores de 5 años · pendiente denominador</option></optgroup>
-          </select>
-          <label for="municipio">Municipio</label>
-          <select id="municipio"><option value="">Todos los municipios</option></select>
-          <label for="estado">Estado de consulta</label>
-          <select id="estado"><option value="">Todos los estados</option><option value="COMPLETADA">Completada en checkpoint</option><option value="PENDIENTE">Pendiente</option><option value="FALLIDA">Fallida</option><option value="SIN_ESTADO_LOCAL">Sin estado en checkpoint</option></select>
-          <div class="territory-controls">
-            <label class="checkbox-line"><input id="showPolygons" type="checkbox" checked> Mostrar polígonos municipales</label>
-            <label for="mapMode">Tipo de cartografía</label>
-            <select id="mapMode">
-              <option value="nutricion">Situación nutricional (1,393 CCT)</option>
-              <option value="cobertura">Cobertura de extracción de CCT</option>
-            </select>
-            <div id="nutritionControls" class="nutrition-controls">
-              <label for="nutritionMetric">Indicador nutricional</label>
-              <select id="nutritionMetric">
-                <option value="peso_bajo">Peso bajo · % entre clasificados</option>
-                <option value="sobrepeso">Sobrepeso · % entre clasificados</option>
-                <option value="obesidad" selected>Obesidad · % entre clasificados</option>
-              </select>
-              <p class="risk-notice">Corte de 1,393 CCT (28/10/2026). Los colores <b>NO son prevalencia municipal</b>. Municipios sin denominador completo se muestran grises. “Peso bajo” no es diagnóstico de desnutrición grave.</p>
-              <div id="nutritionDetail" class="nutrition-detail" aria-live="polite">Selecciona un municipio para consultar los registros disponibles.</div>
-            </div>
-            <div id="coverageControls" hidden>
-            <label for="polyMetric">Colorear municipios por</label>
-            <select id="polyMetric">
-              <option value="cuenta">CCT observadas en Tableau</option>
-              <option value="avance">Porcentaje de consultas completadas</option>
-            </select>
-            </div>
-            <label class="checkbox-line"><input id="showAgebs" type="checkbox"> Ver AGEB urbanas y rurales del municipio seleccionado</label>
-            <p id="agebStatus" class="polygon-status">Selecciona un municipio. Las AGEB mostrarán escuelas ubicadas en cada polígono, no tasas nutricionales.</p>
-            <p id="polygonStatus" class="polygon-status">Cargando límites municipales…</p>
-            <p class="polygon-help">Haz clic en un municipio para filtrar sus escuelas. Las AGEB muestran <strong>ubicación de planteles</strong>, no domicilio de alumnos. Las áreas sin datos se mantienen sin clasificar.</p>
-          </div>
-          <div class="between results"><span id="resultCount">Cargando escuelas…</span><button id="download" class="text-button">Exportar listado</button></div>
-          <div id="schoolList" class="school-list" aria-live="polite"></div>
-        </section>
-        <section class="source-warning"><strong>Privacidad y alcance</strong><p>Sólo se publican datos de escuelas y agregados autorizables. No hay nombres, domicilios ni registros clínicos individuales de menores. La ubicación es referencial, tomada de SEP.</p></section>
-      </div>
-    </aside>
-    <main class="main">
-      <div class="topbar">
-        <div class="topbar-titles"><span class="crumb">ALLERE ALUMNAE / CARTOGRAFÍA</span><h2>Sonora, bajo la lupa.</h2></div>
-        <div class="tabs" role="group" aria-label="Vista"><button id="tabMap" class="tab active" aria-pressed="true">Mapa escolar</button><button id="tabHealth" class="tab" aria-pressed="false">Panorama IMC · 1,393 CCT</button><button id="tabWHO" class="tab" aria-pressed="false">Curvas OMS</button></div>
-      </div>
-      <section id="mapView" class="map-panel">
-        <div id="map" aria-label="Mapa interactivo de escuelas de Sonora"></div>
-        <div class="municipal-legend" id="municipalLegend" hidden><strong id="legendTitle">Indicador municipal</strong><span id="legendMetric">Corte parcial · sin datos = gris</span><div id="legendBins" class="legend-bins"></div></div>
-        <div class="map-legend"><strong>Estado de extracción</strong><span><i class="dot green"></i>Completada</span><span><i class="dot orange"></i>Fallida</span><span><i class="dot slate"></i>Pendiente</span><span><i class="dot gray"></i>Sin estado</span></div>
-        <div class="map-footnote">Basemap © OpenStreetMap · Límites municipales: fuente cartográfica identificada en metodología · Puntos SEP referenciales</div>
-      </section>
-      <section id="healthView" class="health-panel" hidden>
-        <div class="health-head"><span class="overline">RESPALDO HISTÓRICO / CORTE PARCIAL</span><h3>Peso y talla: 1,393 CCT recuperadas</h3><p>Estas cifras proceden de 1,393 CCT con tablas confirmadas del 28/10/2026. Son un subconjunto de escuelas, no una muestra representativa de todos los menores del estado. El ciclo escolar debe confirmarse por consulta antes de hacer inferencias longitudinales.</p></div>
-        <div class="health-kpis">
-          <div><small>CCT con tablas de resultados</small><strong id="hSchools">1,393</strong></div>
-          <div><small>Menores evaluados según hojas</small><strong id="hEvaluated">120,858</strong></div>
-          <div><small>Clasificaciones IMC recuperadas</small><strong id="hClassified">113,834</strong></div>
-        </div>
-        <div class="health-chart" id="healthChart"></div>
-        <div class="health-municipios">
-          <div class="between"><div><h3>Agregación municipal disponible</h3><p>24 municipios con categorías IMC publicables; los seis distritos tienen datos agregados.</p></div></div>
-          <div id="municipalityHealth" class="health-grid"></div><div id="districtHealth" class="health-grid"></div>
-          <div class="health-table-panel">
-            <div class="health-table-head">
-              <div><h3>Detalle municipal recuperado</h3><p>Numerador / clasificaciones IMC, con las cuatro categorías nutricionales dentro del respaldo parcial.</p></div>
-              <button type="button" id="downloadNutrition" class="export-data">Exportar datos agregados</button>
-            </div>
-            <div class="table-scroll">
-              <table class="nutrition-table">
-                <thead><tr><th>Municipio</th><th>CCT<br>respaldo</th><th>Clasificados<br>IMC</th><th>Peso bajo</th><th>Sobrepeso</th><th>Obesidad</th><th>Normal</th><th>Calidad</th></tr></thead>
-                <tbody id="nutritionTable"></tbody>
-              </table>
-            </div>
-            <p class="table-hint">Los porcentajes son descriptivos de las 1,393 CCT extraídas. Cuando una categoría fue suprimida o falta denominador completo, la tasa se omite. No hay inferencia residencial por AGEB.</p>
-          </div>
-        </div>
-        <div class="warning-block"><strong>Interpretación obligatoria</strong><p>Se muestran conteos de un subconjunto no aleatorio. No se calculan tasas estatales ni comparaciones de desempeño entre escuelas. Se suprimen subgrupos municipales menores de once.</p></div>
-      </section>
-      <section id="whoView" class="health-panel" hidden>
-        <div class="health-head"><span class="overline">REFERENCIA ANTROPOMÉTRICA</span><h3>Curvas OMS: del territorio al crecimiento</h3>
-          <p>El PDF de referencia proporcionado contiene curvas 0–5 y 5–19 años (IMC para la edad en sus páginas 10–11). El ZIP IMSS sólo incluye categorías agregadas y grupos de edad/sexo, no peso, talla, edad en meses o IMC individual. Por ello, no se calculan percentiles ni grados individuales de desnutrición.</p></div>
-        <div class="who-reference-grid">
-          <article><span class="overline">0 A 59 MESES</span><h3>Patrones OMS 2006</h3><p>Para valoración individual se requiere edad exacta, sexo y medidas antropométricas. En menores de cinco años se emplean los estándares de crecimiento OMS según indicador.</p><a target="_blank" rel="noopener" href="https://www.who.int/tools/child-growth-standards">Consultar curvas oficiales 0–5 años</a></article>
-          <article><span class="overline">5 A 19 AÑOS</span><h3>Referencia OMS 2007</h3><p>IMC para la edad. Delgadez: Z &lt; −2; delgadez severa: Z &lt; −3; sobrepeso: Z &gt; +1; obesidad: Z &gt; +2. La categoría «Peso Bajo» del Tableau no demuestra por sí sola un grado de desnutrición.</p><a target="_blank" rel="noopener" href="https://www.who.int/tools/growth-reference-data-for-5to19-years/indicators/bmi-for-age">Consultar curvas IMC por edad y sexo</a></article>
-        </div><div class="warning-block"><strong>Menores de cinco años</strong><p>El corte muestra 26 menores evaluados de cuatro años. Los porcentajes de cobertura poblacional 0–4 por distrito, municipio o AGEB no pueden calcularse sin denominadores demográficos oficiales de la misma zona y fecha. No debemos dividir evaluados de 2026 entre la población censal de 2020 sin advertir diferencias de población, edad y cobertura.</p></div>
-      </section>
-      <footer class="footer"><span>ALLERE ALUMNAE · Observatorio escolar</span><span>Fuente: 10 hojas Tableau confirmadas + SEP · Corte 28 OCT 2026</span></footer>
-    </main>
-    <aside class="territory-panel" aria-label="Información del territorio seleccionado">
-      <div class="terr-head"><span class="overline">FICHA TERRITORIAL · ALLERE</span><h2 id="terrTitle">Sonora</h2><p id="terrSubtitle">Selecciona un municipio o distrito en el mapa</p></div>
-      <div class="terr-content">
-        <h3>Cobertura de obtención</h3><div id="terrCoverage" class="terr-grid"></div>
-        <div class="terr-divider"></div><h3>Distribución IMC</h3><p class="terr-help">Conteos del corte recuperado, entre IMC clasificados. No prevalencia poblacional.</p><div id="terrNutri"></div>
-        <div class="terr-divider"></div><h3>Edad y primera infancia</h3><div id="terrAge"></div>
-        <div class="terr-divider"></div><h3>Desglose territorial</h3><div id="terrMembers"></div>
-        <div class="terr-note">En AGEB se identifica la ubicación del plantel, no la residencia del menor. Los porcentajes clínicos por AGEB requieren agregados validados y protegidos. «Peso bajo» no determina grado de desnutrición.</div>
-      </div>
-    </aside>
-  </div>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-  <script src="./app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#143d34"><meta name="description" content="ALLERE ALUMNAE | Atlas escolar nutricional y cobertura de Sonora"><title>ALLERE ALUMNAE | Atlas nutricional escolar</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"><link rel="stylesheet" href="./atlas.css"></head><body>
+<div class="shell">
+ <aside class="left">
+ <div class="brand"><div class="brand-emblem">✦</div><div><span class="smallcaps">OBSERVATORIO DE SALUD ESCOLAR</span><h1>ALLERE <em>ALUMNAE</em></h1><p>SONORA · ATLAS NUTRICIONAL 2026</p></div></div>
+ <div class="left-scroll">
+  <div class="eyebrow">CORTE IMSS / 28 OCT 2026</div><h2>La salud escolar, <span>sobre el territorio.</span></h2>
+  <p class="lede">Cruce de CCT SEP, escuelas observadas en Tableau y evaluaciones recuperadas. Visualización de cobertura y categorías IMC, sin datos personales de menores.</p>
+  <div class="stats"><div><small>Escuelas SEP</small><b id="kpSep">5,464</b></div><div><small>En Tableau</small><b id="kpTab">1,501</b></div><div><small>CCT extraídas</small><b id="kpExt">1,393</b></div><div><small>Menores evaluados</small><b id="kpEval">120,858</b></div></div>
+  <div class="progress-section"><div class="between"><span>Extracción del universo Tableau</span><b id="progressPct">92.8%</b></div><div class="progress"><div id="progressFill"></div></div><p>No es cobertura de todos los planteles de Sonora.</p></div>
+  <hr>
+  <label for="nivel">Escala territorial</label><select id="nivel"><option value="municipio">Municipio · 72</option><option value="distrito">Distrito de Salud · 6</option><option value="ageb">AGEB · seleccionar municipio</option></select>
+  <label for="metrica">Indicador del mapa</label><select id="metrica"><optgroup label="Cobertura"><option value="cct_extraidas">% de CCT Tableau extraídas</option><option value="cct_evaluadas">% de CCT con menores evaluados</option><option value="pct_menores_evaluados">% de menores evaluados / registrados</option><option value="pct_tableau_en_sep">% de CCT SEP observadas en Tableau</option></optgroup><optgroup label="Nutrición (muestra recuperada)"><option value="Obesidad" selected>Obesidad · % IMC clasificados</option><option value="Sobrepeso">Sobrepeso · % IMC clasificados</option><option value="Normal">Peso normal · % IMC clasificados</option><option value="Peso Bajo">Peso bajo · % IMC clasificados</option></optgroup><optgroup label="Población infantil"><option value="under5">Menores 0–4 residentes · CONAPO</option><option value="under5_share">% de residentes de 0–4 años · CONAPO</option></optgroup></select>
+  <div class="year-row"><label for="populationYear">Año de proyección CONAPO</label><div><input id="populationYear" type="range" min="2015" max="2030" value="2026" step="1"><strong id="populationYearVal">2026</strong></div></div>
+  <label for="distrito">Distrito de Salud</label><select id="distrito"><option value="">Todos los distritos</option></select>
+  <label for="municipio">Municipio</label><select id="municipio"><option value="">Todos los municipios</option></select>
+  <div class="inline"><label class="check"><input type="checkbox" id="showSchools"> Ver escuelas SEP y su estado</label><button id="reset" type="button" class="reset">Limpiar</button></div>
+  <div class="notice" id="filterNotice">Selecciona un territorio en el mapa o mediante los filtros. Las zonas sin datos de IMC suficiente aparecen en gris.</div>
+  <div class="sources"><b>Fuentes y límites</b><p>IMSS Tableau, corte del 28/10/2026. SEP 2026. Regionalización sanitaria oficial de Sonora (2025). Cartografía municipal de referencia. Los datos IMSS son agregados por escuela de ubicación, no residencia del menor. La capa CONAPO representa población residente proyectada; la capa INEGI corresponde al censo 2020.</p></div>
+ </div></aside>
+ <main class="center"><div class="toolbar"><div><span class="smallcaps">CARTOGRAFÍA ANALÍTICA / SONORA</span><h2 id="mapTitle">Distribución de obesidad en los escolares analizados</h2><p id="mapSubtitle">Color por porcentaje en las clasificaciones IMC recuperadas.</p></div><div class="tabs"><button class="active" type="button" id="tabMap">Mapa</button><button type="button" id="tabTable">Tabla</button><button type="button" id="tabPopulation">Población 0–4</button><button type="button" id="tabWHO">Curvas OMS</button></div></div>
+ <section id="mapPanel" class="map-panel"><div id="map"></div><div class="legend"><div class="between"><b id="legendTitle">Obesidad</b><small id="legendNote">Escuelas con datos suficientes</small></div><div id="legendBins" class="legend-bins"></div><p>Gris = sin dato válido, nunca ausencia de casos. Porcentajes del subconjunto analizado.</p></div><div id="geoStatus" class="geo-status">Límites municipales · Fuente cartográfica derivada de INEGI</div></section>
+ <section id="tablePanel" class="table-panel" hidden><div class="table-head"><h3>Comparación territorial</h3><p>Selecciona una fila para visualizar su municipio o distrito en el mapa.</p><button id="exportTable" type="button">Exportar tabla pública CSV</button></div><div class="table-wrap"><table><thead><tr><th>Territorio</th><th>SEP</th><th>En Tableau</th><th>Extraídas</th><th>% extracción</th><th>Registrados</th><th>Evaluados</th><th>% evaluados</th><th>IMC clasificados</th><th>Peso bajo</th><th>Normal</th><th>Sobrepeso</th><th>Obesidad</th></tr></thead><tbody id="tableBody"></tbody></table></div><p class="table-foot">La información de salud se suprime en municipios con menos de cinco CCT analizadas, menos de cincuenta clasificaciones o alguna categoría inferior a once registros. No calcular tasas estatales o municipales representativas a partir del corte.</p></section>
+ <section id="populationPanel" class="who-panel" hidden><div class="who-head"><span class="eyebrow">DEMOGRAFÍA / PROYECCIONES CONAPO 2015–2030</span><h3>Curva poblacional de menores de cinco años</h3><p id="popSummary">Selecciona un territorio para visualizar su curva CONAPO, separada de los datos de evaluación IMSS.</p></div><div class="demog-kpis" id="popKpis"></div><div class="chart-shell"><svg id="populationChart" role="img" aria-label="Serie 2015 a 2030 de población residente de cero a cuatro años" viewBox="0 0 820 305"></svg></div><div class="table-wrap"><table class="population-table"><thead><tr><th>Año</th><th>Niñas 0–4</th><th>Niños 0–4</th><th>Total 0–4</th><th>Total residentes</th><th>% 0–4</th></tr></thead><tbody id="populationTable"></tbody></table></div><div class="who-callout">CONAPO: proyección de población residente 2015–2030. INEGI: conteo censal de 2020, a nivel AGEB sólo si la fuente censal está efectivamente cargada. Ninguna cifra CONAPO es una medición de niños evaluados por IMSS. El indicador de cobertura escolar utiliza la matrícula reportada por las CCT extraídas, no la población 0–4 residente.</div></section>
+ <section id="whoPanel" class="who-panel" hidden><div class="who-head"><span class="eyebrow">REFERENCIA ANTROPOMÉTRICA</span><h3>Curvas de crecimiento de la OMS</h3><p>Las curvas aportadas cubren estándares de crecimiento infantil y referencias hasta los 19 años, pero el ZIP contiene <b>categorías IMC por edad y sexo</b>, no los pesos y tallas de cada menor. No se han asignado percentiles ni puntuaciones Z individuales.</p></div><div class="who-grid"><article><small>0 a 59 meses</small><h4>Estándares OMS 2006</h4><p>Peso para longitud/talla, talla para edad e IMC para edad. Para evaluar emaciación y grados de desnutrición es necesario peso, longitud/talla, sexo y edad exacta.</p><a href="https://www.who.int/tools/child-growth-standards" target="_blank" rel="noopener">Consultar estándares oficiales OMS</a></article><article><small>5 a 19 años</small><h4>Referencia OMS 2007</h4><p>IMC para la edad por sexo. Delgadez: Z &lt; −2; delgadez severa: Z &lt; −3; sobrepeso: Z &gt; +1; obesidad: Z &gt; +2.</p><a href="https://www.who.int/tools/growth-reference-data-for-5to19-years/indicators/bmi-for-age" target="_blank" rel="noopener">Consultar curvas oficiales 5–19 años</a></article></div><div class="who-callout"><strong>Lectura contextual:</strong> el archivo IMSS incluye edades de 4 a 16 años. Se identificaron 26 evaluados de cuatro años, pero no hay denominadores de población 0–4 por AGEB, municipio o distrito. Tampoco hay información para individualizar a cada niño en una curva. La categoría «Peso Bajo» del tablero NO identifica por sí misma desnutrición moderada o severa.</div></section>
+ <div class="bottom"><span>ALLERE ALUMNAE · Trazabilidad antes que extrapolación</span><span>Datos consolidados: 28 OCT 2026 · CCT SEP: 5,464</span></div>
+ </main>
+ <aside class="right"><div class="detail-top"><div class="eyebrow">EXPLORACIÓN TERRITORIAL</div><h2 id="selName">Sonora</h2><p id="selSub">Panorama de escuelas en el corte recuperado</p></div><div class="right-scroll"><div id="selectionInfo"></div><div class="separator"></div><h3>Niñas y niños residentes de 0 a 4 años</h3><p class="subhelp">Proyección CONAPO anual por municipio o distrito. INEGI 2020 cuando existe dato censal AGEB.</p><div id="populationInfo"></div><div class="mini-chart"><svg id="sidebarPopulationChart" role="img" aria-label="Evolución demográfica CONAPO" viewBox="0 0 340 120"></svg></div><div class="separator"></div><h3>Distribución nutricional</h3><p class="subhelp">Porcentaje de clasificaciones IMC disponibles, no prevalencia de menores residentes.</p><div id="nutrBars" class="nutr-bars"></div><div class="separator"></div><h3>Edades incluidas</h3><div id="ageInfo"></div><div class="separator"></div><h3>Municipios y escuelas</h3><div id="territoryList"></div><div class="method-note"><b>Importante</b><p>El área coloreada representa la ubicación del plantel y su asignación territorial. No describe dónde viven sus estudiantes. La capa AGEB únicamente presenta cobertura escolar hasta contar con agregados sanitarios autorizados.</p></div></div></aside>
+</div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script><script src="./atlas.js"></script></body></html>
