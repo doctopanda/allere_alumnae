@@ -1,0 +1,4 @@
+REPORTES_AUDITORIA_IMSS/
+*.bak
+__pycache__/
+*.pyc
