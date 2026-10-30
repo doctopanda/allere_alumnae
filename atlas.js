@@ -221,7 +221,7 @@ async function reloadAgebs(){clearAgebs();if(state.level!=='ageb')return;if(!sta
  if(!localOkay){const sets=await Promise.all(urls.slice(1).map(async ([type,u])=>{try{const r=await fetch(u);if(!r.ok)return [];const j=readAgebs(await r.json());if(j?.features?.length)sources.push(type);return (j?.features||[]).map(f=>({...f,properties:{...f.properties,tipo_ageb:type}}));}catch(e){console.warn('AGEB '+type,e);return []}}));feats=sets.flat();}
  if(thisRun!==agebSerial)return;
  const prefix='26'+code;feats=feats.filter(f=>['Polygon','MultiPolygon'].includes(f.geometry?.type)&&agebCode(f).startsWith(prefix));
- if(!feats.length){$('geoStatus').textContent='AGEB no disponibles para '+mun+' (servicio INEGI sin respuesta utilizable)';$('filterNotice').textContent='No podemos asignar escuelas a AGEB sin geometría y claves oficiales. El municipio y distrito siguen disponibles.';renderSidebar();return;}
+ if(!feats.length){$('geoStatus').textContent='Sin geometría AGEB utilizable para '+mun+'; el tabulado INEGI 2020 está integrado, pero no se dibujará un área sin un polígono validado';$('filterNotice').textContent='No podemos asignar escuelas a AGEB sin geometría y claves oficiales. El municipio y distrito siguen disponibles.';renderSidebar();return;}
  const pts=schoolData.catalogo_escuelas_2026.filter(r=>r[1]===norm(mun)&&r[2]!=null);
  const list=[];
  agebLayer=L.geoJSON({type:'FeatureCollection',features:feats},{style:styleAgeB,onEachFeature:(f,layer)=>{
@@ -230,7 +230,10 @@ async function reloadAgebs(){clearAgebs();if(state.level!=='ageb')return;if(!sta
  layer.bindTooltip('<b>AGEB '+sanitize(id)+'</b><br>'+fmt(rec.cct_extraidas)+' extraídas / '+fmt(rec.cct_tableau)+' en Tableau<br>'+fmt(rec.cct_sep)+' CCT SEP<br>Residentes 0–4 INEGI 2020: '+fmt(rec.poblacion_0_4_censo_2020)+'<br>Sin tasas IMC por AGEB',{sticky:true});
  layer.on('click',()=>{agebSelected=rec;renderSidebar();refreshSchoolLayer();layer.openTooltip();});
  }}).addTo(map);
- agebItems=list;if(agebLayer.getBounds().isValid())map.fitBounds(agebLayer.getBounds().pad(.04),{maxZoom:13});
+ agebItems=list;
+ agebLayer.eachLayer(l=>l.setStyle(styleAgeB(l.feature)));
+ refreshSchoolLayer(); // los marcadores permanecen visibles y clicables sobre los polígonos
+ if(agebLayer.getBounds().isValid())map.fitBounds(agebLayer.getBounds().pad(.04),{maxZoom:13});
  $('geoStatus').textContent=fmt(list.length)+' AGEB cargadas · fuente: '+sources.join(' + ')+(agebCensus?' · censo INEGI 2020 enlazado':' · sin tabla censal 2020');$('filterNotice').textContent='AGEB = lugar del plantel SEP. Los porcentajes disponibles son sólo de extracción de CCT, no indicadores antropométricos ni población residente.';renderSidebar();
 }
 function chartSvg(series,mini=false){
