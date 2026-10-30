@@ -171,8 +171,52 @@ function renderSidebar(){
  renderPopulationSidebar(r,isAgeB);renderTerritoryList();if(state.tab==='population')renderPopulationTab();
 }
 function renderTerritoryList(){const list=$('territoryList');list.innerHTML='';
- if(state.level==='ageb'&&state.municipality){if(agebItems.length){list.innerHTML='<p class="subhelp">AGEB cargadas: '+fmt(agebItems.length)+'. Haz clic en un polígono para abrir sus conteos.</p>';}
- else list.innerHTML='<p class="subhelp">Cargando AGEBS desde la fuente geoestadística oficial; si no responde, selecciona otro municipio o revisa la conexión.</p>';return;}
+ if(state.level==='ageb'&&state.municipality){
+  const feature=geo?.features?.find(f=>norm(nameForGeo(f))===norm(state.municipality));
+  const mun=String(feature?.properties?.cve_mun||'').padStart(3,'0');
+  const prefix='26'+mun;
+  const censusRows=Object.entries(agebCensus?.registros||{}).filter(([key,v])=>key.startsWith(prefix));
+  const heading=document.createElement('p');heading.className='subhelp';
+  heading.textContent=agebItems.length?
+    fmt(agebItems.length)+' polígonos AGEB con geometría; selecciona el área o una clave del listado.':
+    fmt(censusRows.length)+' AGEB urbanas con conteos INEGI 2020 divulgables; sin geometría cargada sólo se muestra la tabla, no la ubicación.';
+  list.append(heading);
+  if(!censusRows.length)return;
+  const search=document.createElement('input');search.type='search';search.placeholder='Buscar clave AGEB (ej. 26030…)';
+  search.setAttribute('aria-label','Buscar AGEB por clave geoestadística');search.className='ageb-search';
+  list.append(search);
+  const viewport=document.createElement('div');viewport.className='ageb-census-list';list.append(viewport);
+  const rowsByCode=new Map(agebItems.map(rec=>[rec.nombre,rec]));
+  const sorted=censusRows.sort((a,b)=>b[1].p_0a4-a[1].p_0a4);
+  const render=()=>{
+   viewport.innerHTML='';
+   const q=search.value.trim().toUpperCase();
+   const matches=sorted.filter(([id])=>!q||id.includes(q));
+   for(const [id,v] of matches.slice(0,50)){
+    const button=document.createElement('button');button.className='territory-link';
+    button.textContent=id+' · '+fmt(v.p_0a4)+' menores 0–4 (2020)';
+    button.addEventListener('click',()=>{
+      const prior=rowsByCode.get(id);
+      agebSelected=prior||{
+        nombre:id,tipo:'urbana',distrito:initialMunicipal(state.municipality)?.distrito,
+        cct_sep:null,cct_tableau:null,cct_extraidas:null,
+        pct_extraidas_en_tableau:null,pct_tableau_en_sep:null,
+        cct_con_evaluados:null,menores_registrados:null,menores_evaluados:null,
+        pct_menores_evaluados:null,imc_clasificados:null,
+        nutricion_publicable:false,nutricion:{},
+        poblacion_0_4_censo_2020:v.p_0a4,
+        poblacion_total_censo_2020:v.pobtot,pct_0_4_censo_2020:v.pct_0_4
+      };
+      renderSidebar();refreshSchoolLayer();
+    });
+    viewport.append(button);
+   }
+   if(matches.length>50){const foot=document.createElement('p');foot.className='subhelp';foot.textContent='Mostrando 50 de '+fmt(matches.length)+' AGEB. Escribe la clave para localizar otra.';viewport.append(foot)}
+  };
+  search.addEventListener('input',render);
+  render();
+  return;
+ }
  if(state.municipality){const m=initialMunicipal(state.municipality);list.innerHTML='<p class="subhelp">Distrito de Salud '+(m?.distrito||'S/D')+'. Selecciona el nivel AGEB para explorar los polígonos de ubicación de planteles.</p>';return;}
  if(state.district){for(const [code,m] of Object.entries(data.municipios).filter(([k,r])=>r.distrito===state.district).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'))){const el=document.createElement('button');el.className='territory-link';el.textContent=m.nombre+' · '+fmt(m.cct_extraidas)+' CCT extraídas';el.addEventListener('click',()=>selectMunicipio(m.nombre));list.append(el)}return;}
  for(const [code,r] of Object.entries(data.distritos)){const el=document.createElement('button');el.className='territory-link';el.textContent='DS'+code+' · '+data.distritos_nombres[code]+' · '+fmt(r.cct_extraidas)+' CCT';el.addEventListener('click',()=>selectDistrict(code));list.append(el)}
@@ -184,7 +228,7 @@ function renderTable(){if(!data)return;let body=$('tableBody');body.innerHTML=''
 }
 function downloadTable(){const rows=[['Territorio','SEP','Tableau','CCT extraídas','% extracciones','Menores registrados','Menores evaluados','% evaluados','IMC clasificados','Peso bajo','Normal','Sobrepeso','Obesidad'],...levelData().map(([code,r])=>viewRow(r))];const csv='\ufeff'+rows.map(row=>row.map(s=>'"'+String(s??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='ALLERE_COBERTURA_NUTRICION_20261028.csv';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200);}
 function changeTab(tab){state.tab=tab;for(const name of ['map','table','population','who']){$(name+'Panel').hidden=tab!==name;const b=$('tab'+name[0].toUpperCase()+name.slice(1));b.classList.toggle('active',tab===name)}if(tab==='map'&&map)setTimeout(()=>map.invalidateSize(),70);if(tab==='table')renderTable();if(tab==='population')renderPopulationTab();}
-function updateLevel(){state.level=$('nivel').value;agebSelected=null;state.municipality=state.level==='distrito'?'':state.municipality;syncFilters();renderSidebar();applyMap();if(state.level==='ageb')reloadAgebs();else clearAgebs();fitSelection();}
+function updateLevel(){state.level=$('nivel').value;agebSelected=null;if(state.level==='ageb'&&healthCategories.includes(state.metric)){state.metric='under5';$('metrica').value='under5';}state.municipality=state.level==='distrito'?'':state.municipality;syncFilters();renderSidebar();applyMap();if(state.level==='ageb')reloadAgebs();else clearAgebs();fitSelection();}
 function fillControls(){for(const [code,name] of Object.entries(data.distritos_nombres)){$('distrito').add(new Option('DS'+code+' · '+name,code))}for(const [key,r] of Object.entries(data.municipios).sort((a,b)=>a[1].nombre.localeCompare(b[1].nombre,'es'))){$('municipio').add(new Option(r.nombre,r.nombre))}}
 function clearAgebs(){agebSerial++;agebItems=[];agebSelected=null;if(map&&agebLayer){map.removeLayer(agebLayer);agebLayer=null;}}
 function readAgebs(obj){if(!obj)return null;let v=typeof obj==='string'?JSON.parse(obj):obj;
