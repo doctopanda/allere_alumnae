@@ -93,11 +93,11 @@ function initMap(){
 }
 function fitSelection(){if(!map||!geoLayer)return;let bounds=null;geoLayer.eachLayer(l=>{const m=initialMunicipal(nameForGeo(l.feature));const ok=state.municipality?norm(m?.nombre)===norm(state.municipality):state.district?m?.distrito===state.district:false;if(ok){const b=l.getBounds();if(!bounds)bounds=b;else bounds.extend(b)}});if(bounds?.isValid())map.fitBounds(bounds.pad(.09),{maxZoom:12});else if(!state.district&&!state.municipality)map.fitBounds(geoLayer.getBounds().pad(.06));}
 function drawLegend(){const name=metricNames[state.metric];$('legendTitle').textContent=name;
- $('legendNote').textContent=['under5','under5_share'].includes(state.metric)?'CONAPO '+state.popYear+' · población residente':'Proporción dentro del corte disponible';
+ $('legendNote').textContent=['under5','under5_share'].includes(state.metric)?(state.level==='ageb'?'INEGI 2020 · AGEB urbana':'CONAPO '+state.popYear+' · población residente'):'Proporción dentro del corte disponible';
  const target=$('legendBins');target.innerHTML='';const th=thresholds[state.metric],ramp=colors[state.metric]||ramps[state.metric];const arr=['< '+th[0],th[0]+'–'+th[1],th[1]+'–'+th[2],th[2]+'–'+th[3],'≥ '+th[3]];
  ramp.forEach((c,i)=>{target.innerHTML+='<div><i style="background:'+c+'"></i><small>'+arr[i]+(state.metric==='under5'?' niños':'%')+'</small></div>'});target.innerHTML+='<div><i style="background:#cdd6d0"></i><small>S/D</small></div>';}
 function renderTitle(){const title=metricNames[state.metric];$('mapTitle').textContent=title;
- $('mapSubtitle').textContent=state.level==='ageb'?'AGEB = localización de planteles SEP. INEGI 2020 sólo si se dispone del conteo censal P_0A4. CONAPO no da proyección por AGEB.':state.level==='distrito'?'Distribución por Distrito de Salud (2025), con polígonos municipales.':'Cobertura y estado nutricional del corte escolar, por municipio.';
+ $('mapSubtitle').textContent=state.level==='ageb'?'AGEB = ubicación de planteles SEP; INEGI 2020 muestra residentes de 0–4 donde el censo ofrece conteos publicables. CONAPO no da proyección por AGEB.':state.level==='distrito'?'Distribución por Distrito de Salud (2025), con polígonos municipales.':'Cobertura y estado nutricional del corte escolar, por municipio.';
  const caution=['under5','under5_share'].includes(state.metric)?'CONAPO '+state.popYear+': población residente proyectada de 0–4 años. NO dividir evaluados IMSS entre esta población: el operativo escolar abarca otra cohorte y otro universo.':healthCategories.includes(state.metric)?'El color indica porcentajes entre IMC clasificados en escuelas extraídas, no prevalencia poblacional. Los municipios con celdas pequeñas se muestran grises.':state.metric==='pct_menores_evaluados'?'Denominador: menores registrados en las CCT extraídas (no población infantil del municipio).':'«Extraída» significa consulta confirmada a Tableau. No implica encuesta individual completa en toda la escuela.';
  $('filterNotice').textContent=caution;
 }
@@ -198,13 +198,14 @@ function pInRing(point,ring){const x=point[0],y=point[1];let inside=false;for(le
 function pInGeom(point,g){if(!g)return false;const inPolygon=poly=>pInRing(point,poly[0])&&!poly.slice(1).some(r=>pInRing(point,r));return g.type==='Polygon'?inPolygon(g.coordinates):g.type==='MultiPolygon'?g.coordinates.some(inPolygon):false;}
 function styleAgeB(f){
  const census=agebCensus?.registros?.[agebCode(f)];
- const v=state.metric==='under5'?census?.p_0a4:state.metric==='under5_share'?census?.pct_0_4:null;
+ const st=f.properties?._allereStats;
+ const v=state.metric==='under5'?census?.p_0a4:state.metric==='under5_share'?census?.pct_0_4:state.metric==='cct_extraidas'?st?.pct_extraidas_en_tableau:state.metric==='pct_tableau_en_sep'?st?.pct_tableau_en_sep:null;
  let fill='#d6e6e8';
  if(v!=null&&Number.isFinite(v)){
-  const cuts=state.metric==='under5'?[15,50,150,350]:[5,6,7,8];let ix=0;while(ix<4&&v>=cuts[ix])ix++;
-  fill=ramps.under5[ix];
+  const cuts=thresholds[state.metric]||[5,6,7,8];let ix=0;while(ix<4&&v>=cuts[ix])ix++;
+  fill=(ramps[state.metric]||ramps.under5)[ix];
  }
- return {color:'#275763',weight:1.2,fillColor:fill,fillOpacity:['under5','under5_share'].includes(state.metric)?.72:.22};
+ return {color:'#275763',weight:1.2,fillColor:fill,fillOpacity:['under5','under5_share','cct_extraidas','pct_tableau_en_sep'].includes(state.metric)?.72:.22};
 }
 function agebCounts(feature,pts){const stat={cct_sep:0,cct_tableau:0,cct_extraidas:0,cct_con_evaluados:null,menores_registrados:null,menores_evaluados:null,pct_menores_evaluados:null,imc_clasificados:null,nutricion_publicable:false,nutricion:{},menores_5_evaluados:null,rango_edad_5_9:null,rango_edad_10_16:null};
  for(const row of pts){const point=[row[3],row[2]];if(pInGeom(point,feature.geometry)){stat.cct_sep++;if(row[4]==='EXTRAIDA'){stat.cct_tableau++;stat.cct_extraidas++}else if(row[4]==='TABLEAU')stat.cct_tableau++}}
@@ -224,13 +225,13 @@ async function reloadAgebs(){clearAgebs();if(state.level!=='ageb')return;if(!sta
  const pts=schoolData.catalogo_escuelas_2026.filter(r=>r[1]===norm(mun)&&r[2]!=null);
  const list=[];
  agebLayer=L.geoJSON({type:'FeatureCollection',features:feats},{style:styleAgeB,onEachFeature:(f,layer)=>{
- const id=agebCode(f);if(!id)return;const rec=agebCounts(f,pts);rec.nombre=id;rec._geometry=f.geometry;rec.tipo=f.properties?.tipo_ageb||(id.length>9?'urbana':'rural');rec.distrito=initialMunicipal(mun)?.distrito;
+ const id=agebCode(f);if(!id)return;const rec=agebCounts(f,pts);f.properties=f.properties||{};f.properties._allereStats=rec;rec.nombre=id;rec._geometry=f.geometry;rec.tipo=f.properties?.tipo_ageb||(id.length>9?'urbana':'rural');rec.distrito=initialMunicipal(mun)?.distrito;
  list.push(rec);
  layer.bindTooltip('<b>AGEB '+sanitize(id)+'</b><br>'+fmt(rec.cct_extraidas)+' extraídas / '+fmt(rec.cct_tableau)+' en Tableau<br>'+fmt(rec.cct_sep)+' CCT SEP<br>Residentes 0–4 INEGI 2020: '+fmt(rec.poblacion_0_4_censo_2020)+'<br>Sin tasas IMC por AGEB',{sticky:true});
  layer.on('click',()=>{agebSelected=rec;renderSidebar();refreshSchoolLayer();layer.openTooltip();});
  }}).addTo(map);
  agebItems=list;if(agebLayer.getBounds().isValid())map.fitBounds(agebLayer.getBounds().pad(.04),{maxZoom:13});
- $('geoStatus').textContent=fmt(list.length)+' AGEB cargadas · fuente: '+sources.join(' + ')+(agebCensus?' · censo INEGI 2020 enlazado':' · sin tabulado P_0A4 descargado');$('filterNotice').textContent='AGEB = lugar del plantel SEP. Los porcentajes disponibles son sólo de extracción de CCT, no indicadores antropométricos ni población residente.';renderSidebar();
+ $('geoStatus').textContent=fmt(list.length)+' AGEB cargadas · fuente: '+sources.join(' + ')+(agebCensus?' · censo INEGI 2020 enlazado':' · sin tabla censal 2020');$('filterNotice').textContent='AGEB = lugar del plantel SEP. Los porcentajes disponibles son sólo de extracción de CCT, no indicadores antropométricos ni población residente.';renderSidebar();
 }
 function chartSvg(series,mini=false){
  if(!series?.length)return '<text x="20" y="35" fill="#667" font-size="13">Sin proyección para este territorio</text>';
@@ -244,14 +245,32 @@ function chartSvg(series,mini=false){
  const yi=state.popYear-2015;if(series[yi])svg+='<circle cx="'+xx(yi)+'" cy="'+yy(series[yi].pob_0_4)+'" r="'+(mini?4:5.5)+'" fill="#ce8554" stroke="white" stroke-width="2"/>';
  return svg;
 }
+
+function censusTerritory(r){
+ if(!agebCensus||!r)return null;
+ if(r.nombre==='Sonora')return agebCensus.total_estatal_0_4;
+ const m=conapoIndex.get(norm(r.nombre));
+ if(m)return agebCensus.municipios_0_4_censo?.[m.clave_municipio]?.p_0a4??null;
+ if(r.distrito){
+  const ms=Object.values(conapo?.municipios||{}).filter(x=>initialMunicipal(x.municipio)?.distrito===r.distrito);
+  if(!ms.length)return null;
+  const vals=ms.map(m=>agebCensus.municipios_0_4_censo?.[m.clave_municipio]?.p_0a4);
+  return vals.every(Number.isFinite)?vals.reduce((a,b)=>a+b,0):null;
+ }
+ return null;
+}
 function renderPopulationSidebar(r,isAgeB){const node=$('populationInfo'),curve=$('sidebarPopulationChart');const census=isAgeB?agebSelected:null;
- if(isAgeB){if(census?.poblacion_0_4_censo_2020!=null){node.innerHTML='<div class="info-grid">'+numberBox('Residentes 0–4 (INEGI 2020)',census.poblacion_0_4_censo_2020,'Censo 2020, no proyección')+percentBox('% 0–4 (INEGI 2020)',census.pct_0_4_censo_2020,'de los residentes de AGEB')+'</div>';}else node.innerHTML='<p class="demog-empty">No hay P_0A4 censal validado para esta AGEB. La proyección CONAPO está disponible sólo hasta municipio.</p>';curve.innerHTML='';return;}
+ if(isAgeB){if(census?.poblacion_0_4_censo_2020!=null){node.innerHTML='<div class="info-grid">'+numberBox('Residentes 0–4 (INEGI 2020)',census.poblacion_0_4_censo_2020,'Censo 2020, no proyección')+percentBox('% 0–4 (INEGI 2020)',census.pct_0_4_censo_2020,'de los residentes de AGEB')+'</div>';}else node.innerHTML='<p class="demog-empty">No hay conteo INEGI 2020 divulgable para esta AGEB, o falta su polígono geográfico. Los residentes 0–4 por AGEB se derivan de P_0A2 + P_3YMAS - P_5YMAS.</p>';curve.innerHTML='';return;}
  const p=yearProjectionForTerritory(r,state.popYear),series=Array.from({length:16},(_,i)=>yearProjectionForTerritory(r,2015+i));
  if(!p){node.innerHTML='<p class="demog-empty">Sin proyección conciliada con el territorio seleccionado.</p>';curve.innerHTML='';return;}
- node.innerHTML='<div class="info-grid">'+numberBox('Menores 0–4 · '+state.popYear,p.pob_0_4,'CONAPO residentes')+percentBox('% población 0–4',p.pct_0_4,'del total residente')+numberBox('Niñas 0–4',p.mujeres_0_4,'proyección')+numberBox('Niños 0–4',p.hombres_0_4,'proyección')+'</div>';
+ const observed=censusTerritory(r);
+ node.innerHTML='<div class="info-grid">'+numberBox('Menores 0–4 · '+state.popYear,p.pob_0_4,'CONAPO residentes')+
+ percentBox('% población 0–4',p.pct_0_4,'del total residente')+
+ numberBox('Niñas 0–4',p.mujeres_0_4,'proyección')+numberBox('Niños 0–4',p.hombres_0_4,'proyección')+
+ numberBox('Censo INEGI 2020 · 0–4',observed,'Conteo censal municipal/estatal, no AGEB parciales')+'</div>';
  curve.innerHTML=chartSvg(series,true);
 }
-function renderPopulationTab(){if(!conapo||!data)return;const r=selectedRecord();if(state.level==='ageb'&&agebSelected){$('popSummary').textContent='La proyección CONAPO no tiene resolución AGEB. Selecciona municipio o distrito; INEGI AGEB es un recuento censal 2020 separado.';$('populationChart').innerHTML='';$('popKpis').innerHTML='';$('populationTable').innerHTML='';return;}
+function renderPopulationTab(){if(!conapo||!data)return;const r=selectedRecord();if(state.level==='ageb'&&agebSelected){const c=agebSelected;$('popSummary').textContent='AGEB '+c.nombre+' · INEGI Censo 2020, residentes de 0–4 años en área urbana; no hay curva anual CONAPO por AGEB.';$('populationChart').innerHTML='';$('popKpis').innerHTML=numberBox('Residentes 0–4 (INEGI 2020)',c.poblacion_0_4_censo_2020,'Conteo de AGEB, cuando es divulgable')+percentBox('% residentes 0–4',c.pct_0_4_censo_2020,'De la población total de la AGEB');$('populationTable').innerHTML='';return;}
  const series=Array.from({length:16},(_,i)=>yearProjectionForTerritory(r,2015+i));if(series.some(v=>!v))return;
  const current=series[state.popYear-2015],base=series[5],last=series[15];$('popSummary').textContent=(r?.nombre||'Sonora')+' · CONAPO residentes de 0–4 años, 2015–2030. El punto destacado es el año '+state.popYear+'.';
  $('popKpis').innerHTML=numberBox('Menores 0–4 ('+state.popYear+')',current.pob_0_4,'proyección')+numberBox('Niñas 0–4',current.mujeres_0_4,'proyección')+numberBox('Niños 0–4',current.hombres_0_4,'proyección')+percentBox('% de residentes 0–4',current.pct_0_4,'población total '+fmt(current.pob_total));
