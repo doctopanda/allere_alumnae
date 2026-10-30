@@ -1,0 +1,14 @@
+{
+  "esquema": "BOOBOK_EVENTOS_PUBLICOS_V1",
+  "nombre_plataforma": "ALLERE ALUMNAE",
+  "motor": "BOOBOK",
+  "fecha_corte": "2026-10-30",
+  "nota": "Este archivo únicamente admite ubicaciones de actividades o puntos de atención públicos y autorizados. Jamás incluir domicilios, diagnósticos, personas menores, expedientes o ubicación nominal. Las escuelas mantienen sus marcadores propios. No hay intervenciones cargadas al corte.",
+  "requisitos": [
+    "publico_autorizado=true",
+    "tipo en PUNTO_ATENCION/JORNADA/INTERVENCION",
+    "coordenadas públicas verificadas en Sonora",
+    "nombre y descripción sin datos personales"
+  ],
+  "eventos": []
+}
