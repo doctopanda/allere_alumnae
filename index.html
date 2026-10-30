@@ -1,8 +1,17 @@
 <!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#143d34"><meta name="description" content="ALLERE ALUMNAE | Atlas escolar nutricional y cobertura de Sonora"><title>ALLERE ALUMNAE | Atlas nutricional escolar</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"><link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"><link rel="stylesheet" href="./atlas.css"></head><body>
 <div class="shell">
  <aside class="left">
- <div class="brand"><div class="brand-emblem">✦</div><div><span class="smallcaps">OBSERVATORIO DE SALUD ESCOLAR</span><h1>ALLERE <em>ALUMNAE</em></h1><p>SONORA · ATLAS NUTRICIONAL 2026</p></div></div>
+ <div class="brand"><div class="brand-emblem"><img src="./assets/boobok_identidad.webp" alt="BOOBOK, sapo guardián de la infancia" loading="eager"></div><div><span class="smallcaps">PLATAFORMA INTEGRAL DE NUTRICIÓN Y CUIDADO INFANTIL</span><h1>ALLERE <em>ALUMNAE</em></h1><p>SONORA · ATLAS NUTRICIONAL 2026</p></div></div>
  <div class="left-scroll">
+  <section class="boobok-intro" aria-label="Identidad BOOBOK">
+    <div class="boobok-intro-image"><img src="./assets/boobok_identidad.webp" alt="Ilustración del sapo guardián BOOBOK entre vegetación turquesa y flores rosadas" loading="lazy"></div>
+    <div class="boobok-intro-copy">
+      <span class="boobok-overline">MOTOR DE VIGILANCIA NUTRICIONAL</span>
+      <strong>BOOBOK</strong>
+      <p>El guardián de la infancia y motor operativo de ALLERE ALUMNAE.</p>
+      <button type="button" id="showBoobokIdentity" class="boobok-show">Conocer identidad y funciones <span aria-hidden="true">↗</span></button>
+    </div>
+  </section>
   <div class="eyebrow">CORTE IMSS / 28 OCT 2026</div><h2>La salud escolar, <span>sobre el territorio.</span></h2>
   <p class="lede">Cruce de CCT SEP, escuelas observadas en Tableau y evaluaciones recuperadas. Visualización de cobertura y categorías IMC, sin datos personales de menores.</p>
   <div class="stats"><div><small>Escuelas SEP</small><b id="kpSep">5,464</b></div><div><small>En Tableau</small><b id="kpTab">1,501</b></div><div><small>CCT extraídas</small><b id="kpExt">1,393</b></div><div><small>Menores evaluados</small><b id="kpEval">120,858</b></div></div>
@@ -38,4 +47,25 @@
  <div class="bottom"><span>ALLERE ALUMNAE · Trazabilidad antes que extrapolación</span><span>Datos consolidados: 28 OCT 2026 · CCT SEP: 5,464</span></div>
  </main>
  <aside class="right"><div class="detail-top"><div class="eyebrow">EXPLORACIÓN TERRITORIAL</div><h2 id="selName">Sonora</h2><p id="selSub">Panorama de escuelas en el corte recuperado</p></div><div class="right-scroll"><div id="selectionInfo"></div><div class="separator"></div><h3>Niñas y niños residentes de 0 a 4 años</h3><p class="subhelp">Proyección CONAPO anual por municipio o distrito. INEGI 2020 por AGEB urbana cuando el censo aporta datos publicables; son fuentes y años distintos.</p><div id="populationInfo"></div><div class="mini-chart"><svg id="sidebarPopulationChart" role="img" aria-label="Evolución demográfica CONAPO" viewBox="0 0 340 120"></svg></div><div class="separator"></div><h3>Distribución nutricional</h3><p class="subhelp">Porcentaje de clasificaciones IMC disponibles, no prevalencia de menores residentes.</p><div id="nutrBars" class="nutr-bars"></div><div class="separator"></div><h3>Edades incluidas</h3><div id="ageInfo"></div><div class="separator"></div><h3>Municipios y escuelas</h3><div id="territoryList"></div><div class="method-note"><b>Importante</b><p>El área coloreada representa la ubicación del plantel y su asignación territorial. No describe dónde viven sus estudiantes. La capa AGEB únicamente presenta cobertura escolar hasta contar con agregados sanitarios autorizados.</p></div></div></aside>
-</div><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script><script src="./atlas.js"></script></body></html>
+
+</div>
+<dialog id="boobokIdentityDialog" class="boobok-dialog" aria-labelledby="boobokDialogTitle">
+  <div class="boobok-modal-head">
+    <div><span class="boobok-overline">IDENTIDAD OFICIAL</span><h2 id="boobokDialogTitle">BOOBOK <small>· ALLERE ALUMNAE</small></h2></div>
+    <button type="button" class="boobok-close" id="closeBoobokIdentity" aria-label="Cerrar identidad BOOBOK">✕</button>
+  </div>
+  <img src="./assets/boobok_identidad.webp" class="boobok-full-art" alt="Imagen de identidad BOOBOK: sapo guardián y seis funciones Búsqueda activa, Observación del crecimiento, Orientación nutricional, Bienestar infantil, Oportunidad de intervención y Kárdex de seguimiento. Lema: Cada infancia cuenta, cada crecimiento importa." width="1671" height="941" loading="lazy">
+  <div class="boobok-modal-copy">
+    <p><strong>El guardián de la infancia.</strong> BOOBOK detecta riesgos nutricionales, organiza alertas, orienta intervenciones y apoya el seguimiento.</p>
+    <div class="boobok-acronym" aria-label="Significado del acrónimo BOOBOK">
+      <div><b>B</b><span>Búsqueda activa</span></div>
+      <div><b>O</b><span>Observación del crecimiento</span></div>
+      <div><b>O</b><span>Orientación nutricional</span></div>
+      <div><b>B</b><span>Bienestar infantil</span></div>
+      <div><b>O</b><span>Oportunidad de intervención</span></div>
+      <div><b>K</b><span>Kárdex de seguimiento</span></div>
+    </div>
+    <p class="boobok-motto">BOOBOK: Cada infancia cuenta. Cada crecimiento importa.</p>
+  </div>
+</dialog>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script><script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script><script src="./atlas.js"></script></body></html>
