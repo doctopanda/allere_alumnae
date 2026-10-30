@@ -27,7 +27,7 @@ html.allere-mobile-map .territory-ribbon strong{font-size:12px!important;line-he
 html.allere-mobile-map .territory-ribbon small{font-size:9px!important}
 html.allere-mobile-map .map-panel{flex:1 1 auto!important;height:auto!important;min-height:0!important;max-height:none!important;position:relative!important}
 html.allere-mobile-map #map{height:100%!important;min-height:0!important}
-html.allere-mobile-map .leaflet-container{touch-action:pan-x pan-y}
+/* Leaflet conserva touch-action propio para permitir el arrastre táctil del mapa. */
 html.allere-mobile-map .leaflet-control-zoom{margin-top:12px!important;margin-right:11px!important}
 html.allere-mobile-map .legend{bottom:20px!important;left:9px!important;padding:8px 10px!important;min-width:0!important;max-width:60%!important}
 html.allere-mobile-map .legend p{display:none!important}
