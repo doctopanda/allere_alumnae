@@ -7,6 +7,7 @@ La versión móvil usa los archivos `data/indicadores_20261028.json` y el visor 
 ## Funcionalidades
 - Inicio: cuatro KPIs, cobertura de extracción/evaluación, tres pendientes diferenciados.
 - Mapa: Leaflet interactivo con filtro desplegable y ficha territorial deslizable, y capas de escuelas bajo demanda. Sin replicar los datos del mapa.
+- Visor: pestaña con la plataforma integral incrustada dentro de la webapp.
 - Tablero: selección distrito/municipio, indicadores, barras de IMC con datos publicables, comparación entre los 6 distritos.
 - Tarjetas clicables: formula, numerador, denominador y alcance del indicador.
 - Instalación: Android Chrome (Instalar app) o iPhone Safari (Compartir → Añadir a pantalla de inicio).
