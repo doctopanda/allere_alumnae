@@ -1,0 +1,32 @@
+{
+  "proyecto": "ALLERE ALUMNAE",
+  "fuente": "RESULTADOS_IMSS_TABLEAU_RESCATE.zip proporcionado por el usuario",
+  "corte_recibido": "2026-10-24",
+  "hojas_tableau": 10,
+  "cct_distintas_con_filtro_confirmado": 194,
+  "filas_categorias_imc": 679,
+  "menores_evaluados_reportados": 20787,
+  "clasificaciones_imc_suma": 20188,
+  "sin_clasificacion_imc_en_esta_vista": 599,
+  "categoria_casos": {
+    "Peso Bajo": 572,
+    "Normal": 10984,
+    "Sobrepeso": 3981,
+    "Obesidad": 4651
+  },
+  "controles_cct": {
+    "categoria_duplicada_por_cct": 0,
+    "clasificados_mayores_que_evaluados": 0,
+    "conteos_negativos_o_no_numericos": 0
+  },
+  "geografia": {
+    "municipios_en_respaldo": 20,
+    "municipios_con_tasas_descriptivas_publicables": 7,
+    "municipios_con_celda_pequena_suprimida": [
+      "Etchojoa"
+    ],
+    "otros_municipios_sin_publicacion": "No alcanzar criterios mínimos de escuelas evaluadas"
+  },
+  "restricciones": "No se han recibido los CSV epidemiológicos del avance posterior de 1393 CCT completadas. El ciclo escolar por CCT no se deduce de este ZIP. No interpretar proporciones de muestra como prevalencia poblacional.",
+  "confidencialidad": "No hay datos clínicos por escuela ni edad/sexo individuales en el mapa público. No extrapolar a residencia ni colorizar IMC por AGEB sin validación y supresión."
+}
