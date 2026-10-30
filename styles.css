@@ -28,3 +28,21 @@
 .legend-bins>span{display:flex;gap:4px;align-items:center;font-size:9px;font-weight:500;color:#5b6960;white-space:nowrap}
 .legend-bins i{display:block;height:10px;width:13px;border-radius:2px;border:1px solid #64796d33}
 @media(max-width:780px){.municipal-legend{position:static;max-width:none;margin:8px;background:#fff;box-shadow:none}.map-panel{display:flex;flex-direction:column}.map-panel #map{order:1}.municipal-legend{order:0}.map-legend{position:absolute;bottom:34px}.map-footnote{bottom:5px}}
+
+/* Tabla de distribución nutricional: sin aparentar prevalencias estatales */
+.health-table-panel{margin-top:25px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px}
+.health-table-head{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:15px}
+.health-table-head h3{font:800 19px/1.3 Manrope,sans-serif;margin:0}
+.health-table-head p{font-size:11px;margin:4px 0;color:#748178;line-height:1.5}
+.export-data{background:var(--forest);color:#fff;padding:9px 12px;border:0;border-radius:8px;font-size:11px;font-weight:800;white-space:nowrap}
+.table-scroll{overflow-x:auto}
+.nutrition-table{width:100%;border-collapse:collapse;font-size:11px;min-width:745px}
+.nutrition-table th,.nutrition-table td{text-align:left;padding:12px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+.nutrition-table thead th{font-weight:800;background:#edf3ec;color:var(--forest);font-size:10px;letter-spacing:.15px}
+.nutrition-table tbody th{font-weight:800}
+.nutrition-table td b{display:block;font:800 13px Manrope,sans-serif;color:#334b40}
+.nutrition-table td small{display:block;margin-top:3px;color:#7c8d81;font-size:10px}
+.quality-ok{font-size:10px;color:#2b7354;font-weight:700}
+.quality-muted,.no-data{font-size:10px;color:#8e7869}
+.table-hint{font-size:10px;line-height:1.65;margin:11px 0 0;color:#788377}
+@media(max-width:780px){.health-table-panel{padding:12px}.health-table-head{align-items:flex-start;flex-direction:column}}
