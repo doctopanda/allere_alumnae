@@ -189,7 +189,7 @@ button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid 
 .info-card b{font-size:20px;color:#194f43;letter-spacing:-.5px}
 .info-card span{color:#87998c}
 .right h3{font-size:13px;color:#20564c}
-.nutr-stack{margin:8px 0 17px}
+.nutri-stack{margin:8px 0 17px}
 .nutri-stack-track{display:flex;width:100%;height:17px;gap:1px;background:#e6e8e3;border-radius:8px;overflow:hidden;box-shadow:inset 0 1px 3px #0001}
 .nutri-stack-track span{height:100%;display:block;min-width:0}
 .nutri-stack-labels{display:grid;grid-template-columns:1fr 1fr;column-gap:7px;row-gap:6px;margin-top:9px}
