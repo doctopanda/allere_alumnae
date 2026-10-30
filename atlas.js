@@ -345,3 +345,21 @@ async function main(){
  }catch(e){console.error(e);$('geoStatus').textContent='Error de carga: '+e.message;$('map').innerHTML='<p style="padding:30px">No se pudo cargar la versión nueva. Consulta la consola o recarga el sitio.</p>';}
 }
 document.addEventListener('DOMContentLoaded',main);
+/* BOOBOK: visor de identidad independiente de las consultas y filtros del atlas. */
+document.addEventListener('DOMContentLoaded',()=>{
+  const modal=document.getElementById('boobokIdentityDialog');
+  const open=document.getElementById('showBoobokIdentity');
+  const close=document.getElementById('closeBoobokIdentity');
+  if(!modal||!open||!close)return;
+  open.addEventListener('click',()=>{
+    if(typeof modal.showModal==='function')modal.showModal();
+    else modal.setAttribute('open','');
+  });
+  close.addEventListener('click',()=>{if(typeof modal.close==='function')modal.close();else modal.removeAttribute('open')});
+  modal.addEventListener('click',event=>{
+    if(event.target===modal){
+      if(typeof modal.close==='function')modal.close();
+      else modal.removeAttribute('open');
+    }
+  });
+});
