@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="es-MX">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a5953">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ALLERE">
+<meta name="description" content="ALLERE ALUMNAE. Mapa nutricional y tablero escolar interactivo de Sonora para celular.">
+<title>ALLERE ALUMNAE | Webapp móvil</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./assets/boobok/BOOBOK_avatar_256.png">
+<link rel="icon" type="image/png" href="./assets/boobok/BOOBOK_avatar_128.png">
+<link rel="stylesheet" href="./movil.css">
+</head>
+<body>
+<div class="app">
+ <header class="app-top">
+   <div class="top-mark"><img src="./assets/boobok/BOOBOK_avatar_128.png" alt="BOOBOK"></div>
+   <div class="top-name"><strong>ALLERE ALUMNAE</strong><span>Visor nutricional móvil · Sonora</span></div>
+   <div class="top-cut"><span>CORTE AUDITADO</span><b>28 OCT 2026</b></div>
+ </header>
+ <main class="main" id="appMain">
+   <section class="view" id="view-home" aria-label="Inicio">
+     <div class="hero">
+       <div class="hero-copy">
+         <span class="kicker">PLATAFORMA DE NUTRICIÓN INFANTIL</span>
+         <h1>Cada infancia cuenta.<br>Cada crecimiento importa.</h1>
+         <p>BOOBOK acompaña la vigilancia nutricional escolar en el territorio sonorense.</p>
+         <div class="hero-cta"><button data-go="map">⌖ Explorar mapa</button><button class="secondary" data-go="dashboard">Ver tablero</button></div>
+       </div>
+       <img class="hero-portrait" src="./assets/boobok/BOOBOK_ficha_vertical.webp" alt="BOOBOK, guardián nutricional con paleta turquesa, verde y rosa">
+     </div>
+     <div class="section-head"><div><span class="topline">Panorama estatal</span><h2>Sonora, en cuatro cifras</h2></div><small>Datos auditados</small></div>
+     <div id="homeKpis" class="kpi-grid" aria-live="polite"><div class="card">Cargando indicadores…</div></div>
+     <article class="card" aria-label="Avance del operativo">
+       <h3>¿Qué tanto se ha recuperado?</h3>
+       <div class="ratio-row"><span>Extracción dentro del universo Tableau</span><b id="homeExtractPct">…</b></div>
+       <div class="meter"><span id="homeExtractBar" style="width:0%"></span></div>
+       <div class="ratio-row"><span>Evaluados en las CCT extraídas</span><b id="homeEvalPct">…</b></div>
+       <div class="meter pink"><span id="homeEvalBar" style="width:0%"></span></div>
+       <p class="source-note">El avance de extracción no equivale a cobertura de todas las escuelas ni a prevalencia poblacional.</p>
+     </article>
+     <div class="section-head"><div><span class="topline">Calidad de datos</span><h2>Tres pendientes distintos</h2></div></div>
+     <div class="summary-list" id="homeGaps"></div>
+     <div class="notice"><strong>Interpretación epidemiológica:</strong> son resultados agregados del operativo escolar IMSS. No representan a todos los menores residentes de Sonora. Las escuelas están georreferenciadas por ubicación del plantel, no por domicilio infantil.</div>
+     <div class="actions"><button class="action" data-go="map">Abrir mapa 🗺️</button><button class="action alt" data-go="dashboard">Análisis por territorio</button></div>
+     <div class="install-banner" id="installBanner"><strong>Instala ALLERE en tu celular</strong><div id="installHint">Accede desde tu pantalla de inicio.</div><button id="installBtn" type="button">Instalar webapp</button></div>
+     <p class="footer-notice">ALLERE ALUMNAE · BOOBOK · Fuentes IMSS, SEP, CONAPO e INEGI. Sin registros nominales infantiles.</p>
+   </section>
+   <section class="view view-map" id="view-map" hidden aria-label="Mapa de Sonora">
+     <div id="mapSlot" class="map-empty">
+       <img src="./assets/boobok/BOOBOK_avatar_128.png" alt="">
+       <span class="spinner" aria-hidden="true"></span>
+       <strong>Preparando el mapa territorial</strong>
+       <p>Se utiliza el visor Leaflet de ALLERE, con filtros y ficha adaptados a pantalla táctil.</p>
+     </div>
+   </section>
+   <section class="view" id="view-dashboard" hidden aria-label="Tablero nutricional">
+     <div class="section-head" style="margin-top:4px"><div><span class="topline">Tablero táctil</span><h2>Exploración territorial</h2></div><small>6 distritos · 72 municipios</small></div>
+     <p class="section-subtitle">Selecciona el distrito y municipio. Pulsa una cifra o un segmento para abrir su ficha metodológica.</p>
+     <div class="filters">
+       <div><label for="mobileDistrict">Distrito de Salud</label><select id="mobileDistrict"><option value="">Todo Sonora</option></select></div>
+       <div><label for="mobileMunicipality">Municipio</label><select id="mobileMunicipality"><option value="">Todos los municipios</option></select></div>
+     </div>
+     <div class="data-mast"><span aria-hidden="true">◉</span><div>Analizando <b id="selectedTerritory">Sonora</b><br><small id="selectedContext">Corte IMSS: octubre de 2026</small></div></div>
+     <div class="section-head"><div><span class="topline">Indicadores</span><h2>Cobertura y evaluación</h2></div></div>
+     <div id="dashboardKpis" class="status-grid" aria-live="polite"></div>
+     <article class="card">
+       <h3>Avance de recuperación y evaluación</h3>
+       <div id="dashboardMeters"></div>
+       <p class="source-note">Los denominadores cambian según el indicador. Pulsa una cifra para conocerlos.</p>
+     </article>
+     <div class="section-head"><div><span class="topline">Clasificación antropométrica</span><h2>Distribución del IMC</h2></div></div>
+     <article class="card">
+       <p>Porcentaje entre registros con IMC clasificado del territorio seleccionado. No es prevalencia poblacional.</p>
+       <div id="nutriStack" class="stacked" role="group" aria-label="Categorías de IMC"></div>
+       <div id="nutritionLegend" class="legend-list"></div>
+       <p id="nutriPrivacy" class="source-note"></p>
+     </article>
+     <div class="section-head"><div><span class="topline">Comparación territorial</span><h2>Distritos de Salud</h2></div><small>Tocar para filtrar</small></div>
+     <article class="card" style="margin-top:0">
+       <p>Ordenados por avance de extracción de CCT presentes en Tableau. Esta comparación no mide representatividad del operativo.</p>
+       <div id="districtRows" class="territories"></div>
+     </article>
+     <div class="actions"><button class="action" data-go="map">Ver territorio en el mapa</button><a class="action alt" style="text-align:center;text-decoration:none;display:grid;place-items:center" href="./plataforma.html" target="_blank" rel="noopener">Tablero completo ↗</a></div>
+     <p class="footer-notice">Las categorías pequeñas están suprimidas conforme a las reglas de publicación. Nunca interpretar «S/D» como cero.</p>
+   </section>
+ </main>
+ <nav class="tabbar" aria-label="Navegación de la webapp">
+   <button type="button" data-tab="home" class="active" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 3l9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Inicio</span></button>
+   <button type="button" data-tab="map"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2zM9 3v16m6-14v16"/></svg><span>Mapa</span></button>
+   <button type="button" data-tab="dashboard"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V10h4v11M10 21V3h4v18m2 0v-8h4v8M2 21h20"/></svg><span>Tablero</span></button>
+ </nav>
+</div>
+<dialog id="detailSheet" class="sheet" aria-labelledby="sheetTitle">
+ <div class="sheet-bar"></div>
+ <div class="sheet-head"><div><span>FICHA DE INDICADOR · BOOBOK</span><h2 id="sheetTitle">Detalle</h2></div><button type="button" id="closeSheet" aria-label="Cerrar detalle">✕</button></div>
+ <div class="sheet-body" id="sheetBody"></div>
+</dialog>
+<script src="./movil.js" defer></script>
+</body>
+</html>
