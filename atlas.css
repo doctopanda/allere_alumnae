@@ -18,3 +18,46 @@
 .ageb-search{width:100%;padding:9px 10px;border-radius:8px;border:1px solid #d1dfd5;background:#fff;color:#214a37;font-size:11px;margin:8px 0}
 .ageb-census-list{max-height:235px;overflow-y:auto;scrollbar-width:thin;border:1px solid #e2e9e1;border-radius:8px;padding:5px 10px;background:#fff}
 .ageb-census-list>.territory-link{font-size:10px;line-height:1.35}
+
+/* BOOBOK · identidad de ALLERE ALUMNAE
+   La paleta Venusaur se incorpora a la interfaz. No mostrar paneles Pantone. */
+:root{--boobok-teal:#409993;--boobok-aqua:#7BB7B7;--boobok-leaf:#5E9569;--boobok-pink:#EC889B;--boobok-earth:#817060}
+.brand{background:linear-gradient(128deg,#0b5f5a 0%,#0d726d 63%,#287a72 100%);min-height:106px}
+.brand-emblem{width:57px;min-width:57px;height:57px;overflow:hidden;padding:0;border-radius:15px;border:2px solid #b7e4de88;background:#fff9ed}
+.brand-emblem img{width:100%;height:100%;object-fit:cover;object-position:13% 56%;display:block}
+.brand .smallcaps{font-size:8px;letter-spacing:1.1px;line-height:1.4;color:#d0f2ed}
+.brand h1 em{color:#e0fcf5}
+.brand p{color:#cfede5}
+.boobok-intro{display:flex;gap:12px;background:linear-gradient(138deg,#f1faf5,#e9f4ed 64%,#fff0ef);border:1px solid #b7d5c9;border-radius:13px;padding:11px;margin-bottom:19px;box-shadow:0 3px 14px #145a4b0d}
+.boobok-intro-image{width:92px;min-width:92px;min-height:120px;border-radius:10px;overflow:hidden;background:#fff5e9;position:relative}
+.boobok-intro-image img{height:100%;width:100%;object-fit:cover;object-position:15% 51%;position:absolute;inset:0}
+.boobok-intro-copy{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.boobok-overline{color:#44796f;font-size:9px;letter-spacing:1.05px;font-weight:800}
+.boobok-intro-copy strong{font:900 22px/1.2 Manrope,sans-serif;color:#105a56;letter-spacing:.3px;margin-top:3px}
+.boobok-intro-copy p{margin:5px 0 7px;font-size:10px;line-height:1.5;color:#57756a}
+.boobok-show{border:0;background:#116b63;color:#fff;font-size:10px;font-weight:800;border-radius:7px;padding:9px 10px;line-height:1.25;align-self:flex-start}
+.boobok-show span{padding-left:5px}
+.boobok-show:hover,.boobok-show:focus-visible{background:#0a4c48}
+.boobok-dialog{position:fixed;width:min(1180px,95vw);max-width:95vw;max-height:92vh;overflow:auto;border:1px solid #b9d8cb;border-radius:18px;background:#fdfcf7;color:#194d48;box-shadow:0 25px 90px #0b383450;padding:0}
+.boobok-dialog::backdrop{background:#072c2ab8;backdrop-filter:blur(5px)}
+.boobok-modal-head{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;background:#fdfcf7f7;border-bottom:1px solid #d9e9df;padding:15px 20px;gap:12px}
+.boobok-modal-head h2{font:900 23px Manrope,sans-serif;margin:3px 0 0;color:#145e59}
+.boobok-modal-head h2 small{font-size:12px;font-weight:600;color:#68968c}
+.boobok-close{border:0;background:#e3efea;color:#164d46;width:36px;height:36px;border-radius:10px;font-size:18px;font-weight:700}
+.boobok-close:hover,.boobok-close:focus-visible{background:#b6dbd1}
+.boobok-full-art{display:block;width:100%;height:auto;max-height:68vh;object-fit:contain;background:#fefbf2}
+.boobok-modal-copy{padding:14px 21px 24px}
+.boobok-modal-copy>p{font-size:13px;line-height:1.6;margin:4px 0 14px;color:#4f7065}
+.boobok-acronym{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+.boobok-acronym>div{display:flex;align-items:center;gap:10px;padding:10px 11px;background:#edf6f0;border:1px solid #e2eee4;border-radius:9px}
+.boobok-acronym b{display:grid;place-items:center;min-width:30px;height:30px;background:#409993;color:#fff;border-radius:50%;font:900 17px Manrope}
+.boobok-acronym>div:nth-child(2) b{background:#7BB7B7;color:#0e4c49}
+.boobok-acronym>div:nth-child(3) b{background:#5E9569}
+.boobok-acronym>div:nth-child(4) b{background:#EC889B;color:#61344b}
+.boobok-acronym>div:nth-child(5) b{background:#817060}
+.boobok-acronym>div:nth-child(6) b{background:#317b75}
+.boobok-acronym span{font-size:11px;font-weight:700;line-height:1.4}
+.boobok-motto{font:700 14px Manrope,sans-serif!important;color:#176660!important;text-align:center;margin:18px 0 0!important}
+#showBoobokIdentity:focus-visible,#closeBoobokIdentity:focus-visible{outline:3px solid #EC889B;outline-offset:3px}
+@media(max-width:1050px){.left-scroll>.boobok-intro{grid-column:1/-1}.boobok-intro-image{min-height:106px}}
+@media(max-width:620px){.boobok-dialog{width:98vw;max-width:98vw;max-height:94vh;border-radius:13px}.boobok-modal-head{padding:11px 13px}.boobok-modal-head h2{font-size:19px}.boobok-full-art{max-height:none}.boobok-modal-copy{padding:12px}.boobok-acronym{grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}.boobok-acronym>div{padding:8px;gap:6px}.boobok-acronym span{font-size:10px}}
